@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Preparar modelo 3D</title>
+<style>html,body{margin:0;height:100%;background:#dde1e6;font:13px system-ui}#log{position:fixed;left:8px;top:8px;background:#fff;padding:8px;max-width:420px;max-height:90vh;overflow:auto;white-space:pre-wrap;z-index:2}</style>
+<script type="importmap">{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }</script></head>
+<body><pre id="log">Escolha o GLB original (fica em ../lancer-garagem-originais, fora da pasta publicada): <input type="file" accept=".glb" id="arquivo"></pre>
+<script type="module">
+// Ferramenta de preparação: lê o GLB do Sketchfab, separa em peças (componentes conexos),
+// classifica em zonas do app, simplifica e exporta modelo/lancer.glb.
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import * as BGU from 'three/addons/utils/BufferGeometryUtils.js';
+import { MeshoptSimplifier } from 'https://cdn.jsdelivr.net/npm/meshoptimizer@0.20.0/meshopt_simplifier.module.js';
+
+const log = s => { document.getElementById('log').textContent += '\n' + s; };
+// O original (40 MB) não vai junto da pasta publicada (limite de 25 MB do GitHub): é escolhido pelo campo de arquivo.
+const lerFonte = async () => {
+  const f = document.getElementById('arquivo').files[0];
+  if (!f) throw new Error('Escolha o arquivo GLB original primeiro.');
+  return new GLTFLoader().parseAsync(await f.arrayBuffer(), '');
+};
+
+// Sketchfab/OBJ (cm, y para baixo, frente em -z) → app (m, x frente, y cima, z direita)
+const PARA_APP = new THREE.Matrix4().set(
+  0, 0, -0.01, 0,
+  0, -0.01, 0, 0,
+  -0.01, 0, 0, 0,
+  0, 0, 0, 1);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight); document.body.appendChild(renderer.domElement);
+const cena = new THREE.Scene(); cena.background = new THREE.Color(0xdde1e6);
+cena.add(new THREE.HemisphereLight(0xffffff, 0x666666, 2.2));
+const sol = new THREE.DirectionalLight(0xffffff, 1.5); sol.position.set(3, 6, 4); cena.add(sol);
+const cam = new THREE.PerspectiveCamera(35, innerWidth / innerHeight, 0.05, 100); cam.position.set(5, 2.5, 5);
+const ctl = new OrbitControls(cam, renderer.domElement); ctl.target.set(0, 0.6, 0);
+(function loop() { requestAnimationFrame(loop); ctl.update(); renderer.render(cena, cam); })();
+window.ver = (p, t = [0, 0.6, 0]) => { cam.position.set(...p); ctl.target.set(...t); ctl.update(); renderer.render(cena, cam); };
+
+// geometria só com posição, já no sistema do app, soldada
+function preparar(geo) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', geo.attributes.position.clone());
+  g.setIndex(geo.index ? geo.index.clone() : null);
+  g.applyMatrix4(PARA_APP);
+  return BGU.mergeVertices(g, 1e-5);
+}
+// componentes conexos por triângulo (union-find nos vértices)
+function componentes(g) {
+  const idx = g.index.array, nV = g.attributes.position.count, pai = new Int32Array(nV).map((_, i) => i);
+  const raiz = i => { while (pai[i] !== i) { pai[i] = pai[pai[i]]; i = pai[i]; } return i; };
+  for (let t = 0; t < idx.length; t += 3) { const a = raiz(idx[t]), b = raiz(idx[t + 1]), c = raiz(idx[t + 2]); pai[b] = a; pai[raiz(c)] = a; }
+  const grupos = new Map();
+  for (let t = 0; t < idx.length; t += 3) { const r = raiz(idx[t]); (grupos.get(r) || grupos.set(r, []).get(r)).push(t / 3); }
+  return [...grupos.values()];
+}
+function subGeo(g, tris) {
+  const idx = g.index.array, out = new Uint32Array(tris.length * 3);
+  tris.forEach((t, i) => { out[i * 3] = idx[t * 3]; out[i * 3 + 1] = idx[t * 3 + 1]; out[i * 3 + 2] = idx[t * 3 + 2]; });
+  const s = new THREE.BufferGeometry(); s.setAttribute('position', g.attributes.position); s.setIndex(new THREE.BufferAttribute(out, 1));
+  return compactar(s);
+}
+function compactar(g) {   // remove vértices não usados
+  const idx = g.index.array, P = g.attributes.position.array, mapa = new Map(), pos = [], ni = new Uint32Array(idx.length);
+  for (let i = 0; i < idx.length; i++) { let v = mapa.get(idx[i]); if (v === undefined) { v = mapa.size; mapa.set(idx[i], v); pos.push(P[idx[i] * 3], P[idx[i] * 3 + 1], P[idx[i] * 3 + 2]); } ni[i] = v; }
+  const s = new THREE.BufferGeometry(); s.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); s.setIndex(new THREE.BufferAttribute(ni, 1));
+  s.computeBoundingBox(); return s;
+}
+
+window.FONTE_MESHES = [];
+window.analisar = async function () {
+  const gltf = await lerFonte();
+  const porMat = {};
+  gltf.scene.traverse(o => { if (o.isMesh) (porMat[o.material.name] ||= []).push(o.geometry); });
+  const res = {};
+  for (const [mat, geos] of Object.entries(porMat)) {
+    const g = preparar(BGU.mergeGeometries(geos.map(x => { const y = new THREE.BufferGeometry(); y.setAttribute('position', x.attributes.position); y.setIndex(x.index); return y; })));
+    const comps = componentes(g).map(tris => ({ tris, geo: subGeo(g, tris) }));
+    res[mat] = comps;
+  }
+  window.PECAS = res;
+  return Object.fromEntries(Object.entries(res).map(([m, c]) => [m, c.length + ' comps, ' + c.reduce((s, x) => s + x.tris.length, 0) + ' tris']));
+};
+window.descrever = function (mat, min = 0) {
+  return PECAS[mat].map((c, i) => { const b = c.geo.boundingBox, f = v => v.toArray().map(n => n.toFixed(2)).join(','); return { i, n: c.tris.length, min: f(b.min), max: f(b.max) }; }).filter(x => x.n >= min).sort((a, b) => b.n - a.n);
+};
+// mostra componentes coloridos (debug)
+window.mostrar = function (filtro) {
+  cena.children.filter(o => o.userData.dbg).forEach(o => cena.remove(o));
+  for (const [mat, comps] of Object.entries(PECAS)) comps.forEach((c, i) => {
+    const cor = filtro ? filtro(mat, c, i) : new THREE.Color().setHSL(Math.random(), 0.6, 0.55);
+    if (!cor) return;
+    const g = c.geo.clone(); g.computeVertexNormals();
+    const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: cor, side: THREE.DoubleSide, roughness: 0.6 }));
+    m.userData = { dbg: true, mat, i }; cena.add(m);
+  });
+};
+// ── Classificação em zonas do app ─────────────────────────
+const RODAS = { FE: [1.31, -0.8], FD: [1.31, 0.8], TE: [-1.32, -0.8], TD: [-1.32, 0.8] };   // [x, z] dos cubos
+const rodaMaisProxima = (x, z) => Object.entries(RODAS).sort((a, b) => Math.hypot(a[1][0] - x, a[1][1] - z) - Math.hypot(b[1][0] - x, b[1][1] - z))[0][0];
+const pertoDaRoda = (x, y, z) => { const k = rodaMaisProxima(x, z), [rx] = RODAS[k]; return Math.abs(x - rx) < 0.36 && y < 0.72 && Math.abs(z) > 0.6 ? k : null; };
+const lado = z => (z < 0 ? 'E' : 'D');
+const portaPorX = x => (x > -0.3 ? 'porta_d' : 'porta_t');
+
+// carroceria e acessórios presos a ela (por posição do centro do componente ou do triângulo)
+function zonaExterna(c, s, mat) {
+  const az = Math.abs(c.z);
+  const roda = pertoDaRoda(c.x, c.y, c.z);
+  if (roda && mat !== 'carpaint') return ['rodas', roda];
+  if (az > 0.82 && c.y > 1.0 && c.y < 1.25 && c.x > 0.4 && c.x < 0.8) return ['retrovisores', lado(c.z)];
+  if (c.y > 1.38) return ['teto', ''];
+  if (c.x > 0.8 && c.x < 1.3 && c.y > 0.9 && c.y < 1.15 && az < 0.8 && mat !== 'carpaint') return ['parabrisa', ''];   // torpedo / limpadores
+  if (c.x > 1.0 && c.y > 0.78 && s.z > 1.2) return ['capo', ''];
+  if (c.x > 1.55 && c.y > 0.62 && c.y < 0.9 && az > 0.4 && mat !== 'carpaint') return ['farois', lado(c.z)];
+  if (c.x > 1.5) return ['parachoque_d', ''];
+  if (c.x < -1.8 && c.y > 0.85 && az > 0.3 && mat !== 'carpaint') return ['lanternas', lado(c.z)];
+  if (c.x < -1.5) return c.y > 0.8 ? ['porta_malas', ''] : ['parachoque_t', ''];
+  if (c.x > 0.9 && az > 0.65) return ['paralamas', lado(c.z)];
+  if (c.y < 0.45 && az > 0.75) return ['teto', ''];   // saias / soleiras (estrutura)
+  if (c.x < -1.15) return ['lateral_t', lado(c.z)];
+  if (az > 0.55 && c.y < 1.38) return [portaPorX(c.x), lado(c.z)];
+  return ['teto', ''];
+}
+function zonaVidro(c, s) {
+  if (s.z > 1 && c.x > 0.2) return ['parabrisa', ''];
+  if (s.z > 1 && c.x < -1.0) return ['vidro_t', ''];
+  return [portaPorX(c.x), lado(c.z)];
+}
+function zonaInterior(c, s) {
+  const az = Math.abs(c.z);
+  if (c.x > 0.4 && c.x < 0.62 && c.z < -0.2 && c.y > 0.85 && s.x < 0.3) return ['direcao', ''];   // volante
+  if (az > 0.65 && s.x > 0.9) return [portaPorX(c.x), lado(c.z)];                              // forros de porta
+  if (c.y > 1.38 || (c.y > 1.25 && az > 0.6)) return ['teto', ''];                               // forro do teto, colunas
+  if ((c.x < 0.35 && c.y < 1.25 && s.x < 0.7) || (c.x < 0 && c.y < 1.5 && az < 0.62 && s.x < 0.4)) return ['bancos', ''];
+  return ['painel', ''];
+}
+function classificarComp(mat, c, s) {
+  switch (mat) {
+    case 'tire': case 'material': return ['rodas', rodaMaisProxima(c.x, c.z)];
+    case 'brakedisk': return ['freios', rodaMaisProxima(c.x, c.z)];
+    case 'mattemetal': { const r = pertoDaRoda(c.x, c.y, c.z); return r ? ['rodas', r] : ['escapamento', '']; }
+    case 'windowglass': return zonaVidro(c, s);
+    case 'redglass': return ['lanternas', lado(c.z)];
+    case 'orangeglass': return c.x < 0 ? ['lanternas', lado(c.z)] : ['farois', lado(c.z)];
+    case 'clearglass': return c.x > 1.5 ? ['farois', lado(c.z)] : c.x < -1.5 ? ['lanternas', lado(c.z)] : ['paralamas', lado(c.z)];
+    case 'mirror': return ['retrovisores', lado(c.z)];
+    case 'interior': return zonaInterior(c, s);
+    default: return zonaExterna(c, s, mat);
+  }
+}
+const PLACAS = ['Material__1', 'Material__2', 'Material__3', 'Material__4'];
+// componentes muito compridos (laterais inteiras, borrachas) são divididos triângulo a triângulo
+const dividir = (mat, s) => (mat === 'carpaint' || mat === 'black' || mat === 'chrome') && (s.x > 1.6 || s.z > 1.6 && mat !== 'carpaint');
+
+window.classificar = function () {
+  const partes = new Map();   // chave zona|inst|mat → [geos]
+  const add = (z, i, mat, geo) => { const k = `${z}|${i}|${mat}`; (partes.get(k) || partes.set(k, []).get(k)).push(geo); };
+  const placas = [];
+  for (const [mat, comps] of Object.entries(PECAS)) for (const comp of comps) {
+    const b = comp.geo.boundingBox, c = b.getCenter(new THREE.Vector3()), s = b.getSize(new THREE.Vector3());
+    if (PLACAS.includes(mat)) { placas.push(b.clone()); continue; }
+    if (!dividir(mat, s)) { const [z, i] = classificarComp(mat, c, s); add(z, i, mat, comp.geo); continue; }
+    // por triângulo
+    const g = comp.geo, P = g.attributes.position.array, idx = g.index.array, grupos = new Map(), v = new THREE.Vector3();
+    for (let t = 0; t < idx.length; t += 3) {
+      v.set(0, 0, 0); for (let k = 0; k < 3; k++) { const a = idx[t + k] * 3; v.x += P[a] / 3; v.y += P[a + 1] / 3; v.z += P[a + 2] / 3; }
+      // lateral inteira da carroceria (peça única com colunas): só separa teto / para-lama / lateral traseira
+      const [z, i] = mat === 'carpaint'
+        ? (v.y > 1.38 ? ['teto', ''] : v.x < -1.15 ? ['lateral_t', lado(v.z)] : v.x > 0.9 ? ['paralamas', lado(v.z)] : ['teto', ''])
+        : zonaExterna(v, new THREE.Vector3(0.1, 0.1, 0.1), mat);
+      const k = z + '|' + i; (grupos.get(k) || grupos.set(k, []).get(k)).push(t / 3);
+    }
+    for (const [k, tris] of grupos) { const [z, i] = k.split('|'); add(z, i, mat, subGeo(g, tris)); }
+  }
+  window.PARTES = [...partes].map(([k, geos]) => { const [zona, inst, mat] = k.split('|'); return { zona, inst, mat, geo: geos.length > 1 ? BGU.mergeGeometries(geos) : geos[0] }; });
+  // placas: agrupa caixas da frente e de trás
+  const frente = placas.filter(b => b.min.x > 0), tras = placas.filter(b => b.max.x < 0);
+  const uniao = l => l.reduce((a, b) => a.union(b), new THREE.Box3());
+  window.PLACAS_CAIXAS = { frente: uniao(frente), tras: uniao(tras) };
+  const resumo = {}; for (const p of PARTES) resumo[p.zona] = (resumo[p.zona] || 0) + p.geo.index.count / 3;
+  return resumo;
+};
+const CORES_ZONA = {};
+const PALETA = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe', '#008080', '#e6beff', '#9a6324', '#800000', '#aaffc3', '#808000', '#000075', '#808080', '#ffd8b1', '#222222'];
+window.mostrarZonas = function (so) {
+  cena.children.filter(o => o.userData.dbg).forEach(o => cena.remove(o));
+  for (const p of PARTES) {
+    if (so && !so.includes(p.zona)) continue;
+    const cor = CORES_ZONA[p.zona] ||= new THREE.Color(PALETA[Object.keys(CORES_ZONA).length % PALETA.length]);
+    const g = p.geo.clone(); g.computeVertexNormals();
+    const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: cor, side: THREE.DoubleSide, roughness: 0.6 }));
+    m.userData = { dbg: true, p }; cena.add(m);
+  }
+  return Object.fromEntries(Object.entries(CORES_ZONA).map(([z, c]) => [z, '#' + c.getHexString()]));
+};
+// ── Simplificação e exportação ─────────────────────────────
+const FRACAO = { tire: 0.16, brakedisk: 0.12, material: 0.35, chrome: 0.3, black: 0.35, clearglass: 0.3, carpaint: 0.42,
+  interior: 0.4, redglass: 0.35, orangeglass: 0.4, windowglass: 0.5, mattemetal: 0.3, mirror: 0.4 };
+function simplificar(g, fracao) {
+  const idx = new Uint32Array(g.index.array), pos = new Float32Array(g.attributes.position.array);
+  const alvo = Math.max(3, Math.floor(idx.length * fracao / 3) * 3);
+  const [novo] = MeshoptSimplifier.simplify(idx, pos, 3, alvo, 0.004, ['LockBorder']);
+  const s = new THREE.BufferGeometry(); s.setAttribute('position', g.attributes.position); s.setIndex(new THREE.BufferAttribute(novo, 1));
+  return compactar(s);
+}
+function comNormais(g) {
+  const n = BGU.toCreasedNormals(g, Math.PI / 5);                 // arestas vivas preservadas
+  const m = BGU.mergeVertices(n, 1e-4);
+  if (m.attributes.position.count < 65535) m.setIndex(new THREE.BufferAttribute(new Uint16Array(m.index.array), 1));
+  return m;
+}
+function quadPlaca(caixa, frente) {
+  const s = caixa.getSize(new THREE.Vector3()), c = caixa.getCenter(new THREE.Vector3());
+  const g = new THREE.PlaneGeometry(s.z, s.y);               // plano XY → gira para encarar ±X
+  g.rotateY(frente ? Math.PI / 2 : -Math.PI / 2);
+  g.translate(frente ? caixa.max.x + 0.002 : caixa.min.x - 0.002, c.y, c.z);
+  return g;
+}
+window.exportar = async function () {
+  await MeshoptSimplifier.ready;
+  const raiz = new THREE.Group(), mats = {};
+  let antes = 0, depois = 0;
+  for (const p of PARTES) {
+    antes += p.geo.index.count / 3;
+    const g = comNormais(simplificar(p.geo, FRACAO[p.mat] ?? 0.4));
+    depois += g.index.count / 3;
+    const m = new THREE.Mesh(g, mats[p.mat] ||= new THREE.MeshStandardMaterial({ name: p.mat }));
+    m.name = `${p.zona}|${p.inst}|${p.mat}`; raiz.add(m);
+  }
+  for (const [lado, caixa] of Object.entries(PLACAS_CAIXAS)) {
+    const m = new THREE.Mesh(quadPlaca(caixa, lado === 'frente'), mats.placa ||= new THREE.MeshStandardMaterial({ name: 'placa' }));
+    m.name = `placa|${lado}|placa`; raiz.add(m);
+  }
+  const buf = await new GLTFExporter().parseAsync(raiz, { binary: true });
+  try { await fetch('/save?name=lancer.glb', { method: 'POST', body: buf }); }
+  catch { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buf])); a.download = 'lancer.glb'; a.click(); }
+  return { antes, depois, mb: (buf.byteLength / 1048576).toFixed(1), partes: raiz.children.length };
+};
+log('pronto: analisar(), descrever(mat), mostrar(fn), classificar(), mostrarZonas(), exportar()');
+</script></body></html>

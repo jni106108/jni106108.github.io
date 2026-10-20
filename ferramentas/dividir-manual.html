@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Dividir manual</title>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script></head>
+<body><pre id="log">Escolha o manual completo (fica em ../lancer-garagem-originais): <input type="file" accept=".pdf" id="arquivo"> e rode dividir()</pre>
+<script>
+// Divide o manual completo em partes de 80 páginas (docs/manual-1.pdf …) para caber no limite de 25 MB do GitHub.
+// js/main.js converte a página do manual na parte certa (PAGINAS_POR_PARTE).
+const PAGINAS_POR_PARTE = 80;
+async function dividir() {
+  const f = document.getElementById('arquivo').files[0];
+  if (!f) throw new Error('Escolha o manual completo primeiro.');
+  const fonte = await PDFLib.PDFDocument.load(await f.arrayBuffer());
+  const total = fonte.getPageCount(), saida = [];
+  for (let ini = 0, n = 1; ini < total; ini += PAGINAS_POR_PARTE, n++) {
+    const parte = await PDFLib.PDFDocument.create();
+    const idx = [...Array(Math.min(PAGINAS_POR_PARTE, total - ini)).keys()].map(i => i + ini);
+    (await parte.copyPages(fonte, idx)).forEach(p => parte.addPage(p));
+    parte.setTitle(`Manual do Proprietário Lancer 2012 — parte ${n} (págs. ${ini + 1}–${ini + idx.length} do PDF)`);
+    const bytes = await parte.save({ useObjectStreams: true });
+    const nome = `manual-${n}.pdf`;
+    try { await fetch('/save?name=' + nome, { method: 'POST', body: bytes }); }
+    catch { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([bytes])); a.download = nome; a.click(); }
+    saida.push(`${nome}: ${idx.length} págs, ${(bytes.length / 1048576).toFixed(1)} MB`);
+  }
+  document.getElementById('log').textContent = saida.join('\n');
+  return { total, saida };
+}
+</script></body></html>
