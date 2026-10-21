@@ -60,6 +60,7 @@ const urlManual = pagina => {
   const parte = Math.ceil(pagina / PAGINAS_POR_PARTE);
   return `docs/manual-${parte}.pdf#page=${pagina - (parte - 1) * PAGINAS_POR_PARTE}`;
 };
+const VERSAO_APP = 'v3 · filtro de camadas e livro com abas';   // aparece em Configurações (troque junto com VERSAO do sw.js)
 const TIPOS = { troca: 'Troca de peça', preventiva: 'Manutenção preventiva', reparo: 'Reparo', inspecao: 'Inspeção', outro: 'Outro' };
 const CORES = [['Prata', '#8d9399'], ['Cinza grafite', '#4a4e54'], ['Preto', '#15161a'], ['Branco', '#e9eaec'], ['Vermelho', '#9b1420'], ['Azul', '#1d3d7a']];
 
@@ -531,7 +532,7 @@ function modalConfig() {
       </div>
       <p class="aviso-fonte" style="margin-top:10px">Os dados ficam salvos só neste aparelho. Faça backup regularmente.</p>
       <div class="secao">Sobre</div>
-      <p class="aviso-fonte">${VEICULO_BASE.modelo} · ${VEICULO_BASE.versao} · ${VEICULO_BASE.motor}. Catálogo: EPC Mitsubishi (Amayama). Manual do proprietário Lancer 2012.</p>
+      <p class="aviso-fonte"><b>Versão do app: ${VERSAO_APP}</b><br>${VEICULO_BASE.modelo} · ${VEICULO_BASE.versao} · ${VEICULO_BASE.motor}. Catálogo: EPC Mitsubishi (Amayama). Manual do proprietário Lancer 2012.</p>
       ${carro.modeloReal ? `<p class="aviso-fonte">Modelo 3D: “Mitsubishi Lancer Sedan 2009” por <a href="https://sketchfab.com/3d-models/mitsubishi-lancer-sedan-2009-5219adf1a62b4b7393d3c1fc451be88b" target="_blank" rel="noopener">Nieve5677</a> (Sketchfab), licença <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> — simplificado e dividido em peças para este app. Mecânica interna genérica.</p>` : ''}
     </div>`);
 }
@@ -1047,4 +1048,10 @@ function onTroca(e) {
 iniciar();
 
 // Instalável/offline (precisa de https ou localhost; no GitHub Pages funciona direto)
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+// Quando uma versão nova do service worker assume, recarrega uma vez para não ficar com arquivos de versões diferentes.
+if ('serviceWorker' in navigator) {
+  const tinha = !!navigator.serviceWorker.controller;
+  let recarregou = false;
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(r => r.update()).catch(() => {});
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (tinha && !recarregou) { recarregou = true; location.reload(); } });
+}
