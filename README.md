@@ -34,7 +34,9 @@ Nenhum arquivo desta pasta passa de 25 MB (o maior é `modelo/lancer.glb`, com 1
 - **Aba Peças**: os 122 grupos e 194 diagramas do catálogo EPC. Zoom e arrasto no diagrama, tabela com nº OEM, supersessão, período, quantidade e preço de referência. Busca por nome, OEM ou referência.
 - **Aba Histórico**: registro de troca/serviço com data, km, peças (OEM, quantidade, preço), mão de obra, oficina e observações.
 - **Aba Reparos**: manutenção programada (intervalos do manual), especificações, problemas conhecidos, páginas do manual (abre o PDF na página certa) e buscas de vídeo no YouTube.
-- **Livro de manutenção** com abas: Veículo (ficha no visual do CRLV verde ou branco), Histórico (linha do tempo por ano), Revisões (carimbos de em dia / vencido / atenção), Despesas (filtros por período e valor) e Alertas. O conteúdo não rola: o que não cabe vai para a página seguinte (‹ › ou deslizando o dedo).
+- **Livro de manutenção** com abas: Veículo (ficha no visual do CRLV verde ou branco), Histórico (linha do tempo por ano; o selo do ano abre/fecha os serviços), Revisões (carimbos de em dia / vencido / atenção), Despesas (filtros por período e valor) e Alertas. Cabeçalho e botões ficam fixos e só a lista rola.
+  - Tocar num serviço do Histórico ou de Despesas abre um menu com **Ver mais**, **Editar** e **Excluir**.
+  - Tocar num item de Revisões/Alertas abre o registro **só daquele serviço** (os outros serviços programados não aparecem para marcar). Para anotar vários juntos, use “+ Anotar serviço”.
 - **Configurações** (engrenagem, canto superior direito): tema claro, escuro ou do sistema (vale para o fundo do 3D), visual do documento, pontos no carro, backup, restauração e planilha.
 
 ### Navegação
