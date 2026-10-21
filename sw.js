@@ -1,7 +1,7 @@
 // Service worker: deixa o app instalável e utilizável offline depois da primeira abertura.
 // Código (html/js/css): rede primeiro, para receber atualizações. Dados pesados (modelo, diagramas, PDFs, CDN): cache primeiro.
 // Ao publicar uma versão nova com mudanças nos dados, troque VERSAO para descartar o cache antigo.
-const VERSAO = 'lancer-garagem-v1';
+const VERSAO = 'lancer-garagem-v2';
 const ESSENCIAL = [
   './', 'index.html', 'css/app.css', 'js/main.js', 'js/carro3d.js', 'js/zonas.js', 'js/dados.js',
   'data/catalogo.json', 'data/manual-paginas.json', 'manifest.webmanifest', 'icones/icone-192.png',

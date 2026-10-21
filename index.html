@@ -13,6 +13,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,800&family=JetBrains+Mono:wght@500&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/app.css">
+<script>
+  // aplica o tema salvo antes de desenhar a página (evita piscar claro → escuro)
+  try { const t = JSON.parse(localStorage.getItem('lancer-garagem.v1') || '{}').config?.tema;
+    if (t === 'claro' || t === 'escuro') document.documentElement.dataset.theme = t === 'claro' ? 'light' : 'dark'; } catch (e) {}
+</script>
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
@@ -26,17 +31,18 @@
   <div id="rotulo" class="rotulo" hidden></div>
 
   <header class="barra">
-    <button class="marca" data-acao="livrete" title="Livrete de manutenção">
-      <img class="marca-logo" src="icones/icone-192.png" alt="" aria-hidden="true">
-      <span class="marca-txt"><b id="apelido">Lancer GT</b><small id="km-atual">— km</small></span>
-      <svg class="marca-livro" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/></svg>
-    </button>
-    <div class="barra-dir">
-      <button class="ico" data-acao="zonas" title="Todas as zonas">
-        <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+    <!-- Menu do veículo: abre para baixo (livro de manutenção, dados do veículo, catálogo…) -->
+    <div class="veic" id="veic">
+      <button class="marca" data-acao="menu-veiculo" aria-expanded="false" aria-controls="veic-lista" title="Meu veículo">
+        <span class="marca-ico"><svg viewBox="0 0 24 24"><path d="M3.5 14.5l1.8-4.6a2 2 0 0 1 1.9-1.3h9.6a2 2 0 0 1 1.9 1.3l1.8 4.6"/><path d="M2.5 14.5h19v3.2h-19z"/><circle cx="7" cy="17.7" r="1.7"/><circle cx="17" cy="17.7" r="1.7"/></svg><i id="veic-alerta" hidden></i></span>
+        <span class="marca-txt"><b id="apelido">Lancer GT</b><small id="km-atual">— km</small></span>
+        <svg class="marca-seta" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
       </button>
-      <button class="ico" data-acao="menu" title="Menu">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
+      <div class="veic-lista" id="veic-lista" hidden></div>
+    </div>
+    <div class="barra-dir">
+      <button class="ico" data-acao="config" title="Configurações">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
       </button>
     </div>
   </header>
@@ -54,14 +60,14 @@
   </nav>
   <div id="chips" class="chips"></div>
 
-  <!-- Alternância de visualização (canto inferior esquerdo; no futuro vira filtro de camadas) -->
-  <div class="seg modo-switch" role="tablist" aria-label="Modo de visualização">
-    <button role="tab" class="ativo" data-modo="ext">Carroceria</button>
-    <button role="tab" data-modo="int">Mecânica</button>
+  <!-- Filtro de camadas (canto inferior esquerdo): abre para cima com os sistemas do carro -->
+  <div class="filtro" id="filtro">
+    <div class="filtro-lista" id="filtro-lista" role="listbox" aria-label="Filtrar sistemas" hidden></div>
+    <button class="filtro-btn" data-acao="filtro" aria-expanded="false" aria-controls="filtro-lista" title="Filtrar sistemas"></button>
   </div>
 
   <div id="dica" class="dica">Toque numa peça ou deslize o menu acima</div>
-  <button id="lembrete-chip" class="lembrete-chip" data-acao="livrete" hidden></button>
+  <button id="lembrete-chip" class="lembrete-chip" data-livro="alertas" hidden></button>
 
   <aside id="painel" class="painel" aria-live="polite" hidden></aside>
   <div id="livrete" class="livrete" hidden></div>

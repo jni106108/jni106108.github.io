@@ -27,22 +27,22 @@ Nenhum arquivo desta pasta passa de 25 MB (o maior é `modelo/lancer.glb`, com 1
 ## O que já funciona
 
 - **Carro 3D real** (`modelo/lancer.glb`, 383 mil triângulos, 12,7 MB) dividido em peças. Mecânica interna (motor, câmbio, suspensões, direção, escapamento, tanque, A/C) é **genérica**, posicionada dentro do carro e destacada por cor.
-  - Cada zona tem uma **camada oculta**: carroceria, periféricos, mecânica, elétrica ou interior. Clicar numa peça de mecânica (ex.: roda) passa o switch para **Mecânica** sozinho.
-  - **A peça clicada fica sólida e o resto do carro translúcido.** Só a peça clicada se mexe (ex.: só a roda dianteira esquerda sai) e a câmera enquadra **essa peça**, não o meio da zona.
+  - Cada zona tem **marcações ocultas** de sistema (`FILTROS` em `js/zonas.js`), usadas pelo **filtro de camadas**.
+  - **A peça clicada fica sólida e o resto do carro translúcido.** Só a peça clicada se mexe (ex.: só a roda dianteira esquerda sai) e a câmera enquadra **essa peça**, não o meio da zona. Ao fechar o painel, a câmera volta ao enquadramento padrão da região.
   - **Clicar de novo no mesmo ponto atravessa** para o que está atrás (roda → disco de freio → suspensão).
   - A **placa** cadastrada em *Meu veículo* aparece no carro (padrão Mercosul) e a **cor** da pintura pode ser trocada.
 - **Aba Peças**: os 122 grupos e 194 diagramas do catálogo EPC. Zoom e arrasto no diagrama, tabela com nº OEM, supersessão, período, quantidade e preço de referência. Busca por nome, OEM ou referência.
 - **Aba Histórico**: registro de troca/serviço com data, km, peças (OEM, quantidade, preço), mão de obra, oficina e observações.
 - **Aba Reparos**: manutenção programada (intervalos do manual), especificações, problemas conhecidos, páginas do manual (abre o PDF na página certa) e buscas de vídeo no YouTube.
-- **Livrete de manutenção**, **lembretes**, **exportação CSV** e **backup JSON**.
+- **Livro de manutenção** com abas: Veículo (ficha no visual do CRLV verde ou branco), Histórico (linha do tempo por ano), Revisões (carimbos de em dia / vencido / atenção), Despesas (filtros por período e valor) e Alertas. O conteúdo não rola: o que não cabe vai para a página seguinte (‹ › ou deslizando o dedo).
+- **Configurações** (engrenagem, canto superior direito): tema claro, escuro ou do sistema (vale para o fundo do 3D), visual do documento, pontos no carro, backup, restauração e planilha.
 
 ### Navegação
 
-- **Menu deslizante** (topo central): arraste para os lados, use as setas ‹ › ou as setas do teclado. O carro gira até a região escolhida e ela fica destacada. A lista é circular e segue a volta em torno do carro.
-  - Carroceria: carro inteiro → para-choque dianteiro → capô e faróis → lateral direita → porta-malas e aerofólio → para-choque traseiro → lateral esquerda → teto e vidros.
-  - Mecânica: mecânica completa → arrefecimento e A/C → motor e elétrica → suspensão dianteira → rodas e pneus → freios → escapamento → tanque → suspensão traseira → interior → câmbio → direção.
-- **Switch Carroceria/Mecânica**: canto inferior esquerdo. No celular, ele sobe junto com a gaveta de detalhes. Ideia para a próxima versão: trocar o switch por um **filtro de camadas** (só suspensão, só motor, só elétrica…), usando as camadas que já estão marcadas em `js/zonas.js`.
-- **Livrete**: toque no nome/km do carro (canto superior esquerdo) ou no aviso de manutenção. O 3D fica pausado e desfocado enquanto ele está aberto.
+- **3D**: arraste para girar em volta do carro e use roda/pinça para aproximar. Não há pan: o carro fica no lugar.
+- **Menu deslizante** (topo central): arraste para os lados, use as setas ‹ › ou as setas do teclado. O carro gira até a região escolhida e ela fica destacada. A lista é circular e mostra só as regiões do filtro atual.
+- **Filtro** (canto inferior esquerdo): abre para cima com Geral, Carroceria, Vidros e luzes, Mecânica, Motor, Transmissão, Suspensão, Freios, Direção, Elétrica e Interior. As peças do sistema escolhido ficam sólidas e o resto translúcido; Geral mostra o carro sem realce. Clicar numa peça fora do filtro troca para o sistema dela. No celular, o botão sobe junto com a gaveta de detalhes.
+- **Menu do veículo** (canto superior esquerdo): livro de manutenção, histórico, despesas, alertas, dados do veículo, catálogo e manual. Qualquer aba do livro fica a dois toques. O 3D fica pausado e desfocado enquanto o livro está aberto.
 
 ## Modelo 3D
 
