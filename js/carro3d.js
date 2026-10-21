@@ -188,7 +188,8 @@ export class Carro3D {
     this.aoSelecionar = aoSelecionar || (() => {});
     this.aoPassar = aoPassar || (() => {});
     this.zonas = {};          // id → { meshes: [], movers: [], centro: V3 }
-    this.selecionada = null; this.instSel = null; this.hover = null; this.raioX = false;
+    this.selecionada = null; this.instSel = null; this.hover = null;
+    this.filtro = null; this.filtroInterno = false;   // filtro de camadas: zonas sólidas (null = sem filtro)
     this.anim = [];           // { obj, base: {pos, rot}, alvo: 0..1, t }
     this.M = materiais(cor);
     this._init();
@@ -212,7 +213,8 @@ export class Carro3D {
     cam.position.set(5.6, 2.4, 5.2);
     const c = this.controles = new OrbitControls(cam, r.domElement);
     c.target.set(0, 0.6, 0); c.enableDamping = true; c.dampingFactor = 0.08;
-    c.minDistance = 1.2; c.maxDistance = 16; c.maxPolarAngle = Math.PI * 0.53; c.enablePan = true;
+    // sem pan: o carro fica parado e o usuário só gira em volta e aproxima/afasta
+    c.minDistance = 1.2; c.maxDistance = 12; c.maxPolarAngle = Math.PI * 0.53; c.enablePan = false;
     c.addEventListener('start', () => { this._tween = null; });   // usuário assumiu a câmera
     const sol = new THREE.DirectionalLight(0xffffff, 1.6);
     sol.position.set(3, 7, 4); sol.castShadow = true;
@@ -221,7 +223,7 @@ export class Carro3D {
     cena.add(sol, new THREE.HemisphereLight(0xffffff, 0x8a8f96, 0.95));   // estúdio claro
     // chão: sombra + disco suave
     const chao = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.ShadowMaterial({ opacity: 0.2 }));
-    chao.rotation.x = -Math.PI / 2; chao.receiveShadow = true; cena.add(chao);
+    chao.rotation.x = -Math.PI / 2; chao.receiveShadow = true; cena.add(chao); this._chao = chao;
     const cv = document.createElement('canvas'); cv.width = cv.height = 256;
     const g = cv.getContext('2d'), grad = g.createRadialGradient(128, 128, 10, 128, 128, 128);
     grad.addColorStop(0, 'rgba(0,0,0,0.38)'); grad.addColorStop(0.55, 'rgba(0,0,0,0.12)'); grad.addColorStop(1, 'rgba(0,0,0,0)');
@@ -759,16 +761,16 @@ export class Carro3D {
 
   // ── Interação ────────────────────────────────────────────
   // Peças sob o ponteiro (zona + instância, ex.: rodas/FE), da mais próxima para a mais distante, sem repetir.
-  // No raio X a carroceria não bloqueia; com uma região ativa, as peças dela vêm primeiro.
+  // Com filtro, a carroceria fora dele não bloqueia; as peças do filtro (e da região do menu) vêm primeiro.
   _pickLista(e) {
     const r = this.renderer.domElement.getBoundingClientRect();
     this.ponteiro.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     this.raycaster.setFromCamera(this.ponteiro, this.camera);
-    const alvos = [];
+    const f = this.filtro, alvos = [];
     this.raiz.traverse(o => {
       const ud = o.userData;
       if (!o.isMesh || !ud.zona) return;
-      if (this.raioX && ud.corpo && ud.zona !== this.selecionada) return;
+      if (f && ud.corpo && !f.has(ud.zona) && ud.zona !== this.selecionada) return;
       alvos.push(o);
     });
     const lista = [];
@@ -776,7 +778,8 @@ export class Carro3D {
       const ud = h.object.userData, inst = ud.inst ?? null, k = ud.zona + '|' + (inst ?? '');
       if (!lista.some(x => x.k === k)) lista.push({ k, zona: ud.zona, inst });
     }
-    if (this.raioX && this.regiao) lista.sort((a, b) => this.regiao.has(b.zona) - this.regiao.has(a.zona));
+    const peso = x => (f ? 2 * f.has(x.zona) : 0) + (this.filtroInterno && this.regiao ? +this.regiao.has(x.zona) : 0);
+    if (f) lista.sort((a, b) => peso(b) - peso(a));
     return lista;
   }
   // Clicar de novo sobre a peça selecionada "atravessa" para a próxima que está atrás
@@ -862,8 +865,11 @@ export class Carro3D {
     if (vista) this.irPara(vista.alvo, vista.dir, vista.dist * this._fatorDist(), { duracao: 1.1 });
   }
 
-  setRaioX(on) {
-    this.raioX = on;
+  // Filtro de camadas: as zonas da lista ficam sólidas e o resto translúcido (null = sem filtro, carro normal).
+  // interno = filtro de mecânica: a região do menu também apaga as peças do filtro que estão fora dela.
+  setFiltro(zonas, interno = false) {
+    this.filtro = zonas ? new Set(zonas) : null;
+    this.filtroInterno = !!zonas && interno;
     this._aplicarMateriais();
   }
 
@@ -888,15 +894,21 @@ export class Carro3D {
     for (const p of this.placas) { p.material.map = tex; p.material.color.set(0xffffff); p.material.needsUpdate = true; }
   }
 
+  // Fundo escuro (o fundo é o CSS da página): sombra mais forte para o carro não "flutuar"
+  setFundoEscuro(escuro) {
+    this._chao.material.opacity = escuro ? 0.45 : 0.2;
+    this.renderer.toneMappingExposure = escuro ? 1.18 : 1.08;
+  }
+
   setCor(cor) {
     this.M.pintura.color.set(cor);
     this.raiz.traverse(o => { if (o.isMesh && o.material.isMeshPhysicalMaterial && o.material.clearcoat === 1 && o.material.metalness === 0.55) o.material.color.set(cor); });
   }
 
   // Estado visual de cada malha. Com algo selecionado: a peça fica sólida e todo o resto translúcido.
-  // Sem seleção: raio X (mecânica) deixa a carroceria fantasma; a região do menu fica destacada.
+  // Sem seleção: o filtro deixa sólidas só as zonas dele; a região do menu fica destacada.
   _aplicarMateriais() {
-    const sel = this.selecionada, isel = this.instSel, hov = this.hover, reg = this.regiao;
+    const sel = this.selecionada, isel = this.instSel, hov = this.hover, reg = this.regiao, f = this.filtro;
     const casa = (zona, inst, z, i) => z && zona === z && (!i || !inst || inst === i);
     if (!this.raiz) return;
     this.raiz.traverse(o => {
@@ -907,8 +919,8 @@ export class Carro3D {
       const ehSel = casa(zona, inst, sel, isel);
       let op = ud.matBase.opacity ?? 1, tr = ud.matBase.transparent;
       if (sel) { if (!ehSel) { op = ud.corpo ? 0.1 : 0.2; tr = true; } }
-      else if (this.raioX && ud.corpo) { op = 0.08; tr = true; }
-      else if (this.raioX && reg && zona && !reg.has(zona)) { op = 0.22; tr = true; }   // mecânica fora da região: fantasma
+      else if (f && !f.has(zona)) { op = ud.corpo ? 0.07 : 0.16; tr = true; }
+      else if (f && this.filtroInterno && reg && !reg.has(zona)) { op = 0.3; tr = true; }   // do filtro, mas fora da região: fantasma
       if (m.transparent !== tr) { m.transparent = tr; m.needsUpdate = true; }
       m.opacity = op; m.depthWrite = op > 0.95;
       o.castShadow = ud.sombra !== false && op > 0.6;

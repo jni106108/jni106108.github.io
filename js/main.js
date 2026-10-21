@@ -1,5 +1,5 @@
 import { Carro3D } from './carro3d.js';
-import { ZONAS, ZONA_POR_ID, zonaDoGrupo, traduz, videoUrl, VEICULO_BASE, REGIOES } from './zonas.js';
+import { ZONAS, ZONA_POR_ID, zonaDoGrupo, traduz, videoUrl, VEICULO_BASE, REGIOES, FILTROS, FILTRO_POR_ID } from './zonas.js';
 import * as D from './dados.js';
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -21,6 +21,37 @@ const ICO = {
   caixa: '<svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4 9-4V7"/></svg>',
   down: '<svg viewBox="0 0 24 24"><path d="M12 4v12M6 10l6 6 6-6M4 20h16"/></svg>',
   up: '<svg viewBox="0 0 24 24"><path d="M12 20V8M6 14l6-6 6 6M4 4h16"/></svg>',
+  dinheiro: '<svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/></svg>',
+  sino: '<svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>',
+  doc: '<svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2"/><circle cx="8.5" cy="11" r="2"/><path d="M5.5 16c.6-1.4 1.6-2 3-2s2.4.6 3 2M14 9.5h4M14 12.5h4M14 15.5h2.5"/></svg>',
+  hodometro: '<svg viewBox="0 0 24 24"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l4-5"/><path d="M7 21h10"/></svg>',
+  seta: '<svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>',
+};
+// Ícones dos filtros de camadas (simples e característicos de cada sistema)
+const FICO = {
+  geral: '<svg viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 12.5l9 5 9-5"/><path d="M3 16.5l9 5 9-5" opacity=".5"/></svg>',
+  carroceria: '<svg viewBox="0 0 24 24"><path d="M2.5 16v-3.2l2.6-.9 3.1-3.6h6.9l3.6 3.6 2.8.9V16"/><path d="M2.5 16h2.3M9.2 16h5.6M19.2 16h2.3"/><circle cx="7" cy="16" r="2.2"/><circle cx="17" cy="16" r="2.2"/></svg>',
+  vidros: '<svg viewBox="0 0 24 24"><path d="M10 5.5a6.5 6.5 0 0 0 0 13z"/><path d="M14 8h7M14 12h7M14 16h7"/></svg>',
+  mecanica: ICO.chave,
+  motor: '<svg viewBox="0 0 24 24"><path d="M7 9h9l2 2h2.5v6H18l-2 2H8.5L6 16.5H4V11h3z"/><path d="M9.5 9V6.5h5V9M12 6.5V4.5M2 13.5h2"/></svg>',
+  transmissao: '<svg viewBox="0 0 24 24"><circle cx="6" cy="5" r="1.8"/><circle cx="12" cy="5" r="1.8"/><circle cx="18" cy="5" r="1.8"/><circle cx="6" cy="19" r="1.8"/><circle cx="12" cy="19" r="1.8"/><path d="M6 6.8v10.4M12 6.8v10.4M18 6.8V12H6"/></svg>',
+  suspensao: '<svg viewBox="0 0 24 24"><path d="M6 3h12M6 21h12"/><path d="M8 5.5l8 1.7-8 1.7 8 1.7-8 1.7 8 1.7-8 1.7 8 1.7-8 1.7"/></svg>',
+  freios: '<svg viewBox="0 0 24 24"><circle cx="10.5" cy="13.5" r="7.5"/><circle cx="10.5" cy="13.5" r="2.2"/><path d="M14.5 3.3a10 10 0 0 1 6.2 6.4"/><path d="M15 7.5l2.4-2.4"/></svg>',
+  direcao: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.2"/><path d="M3.3 10.5l6.6 1M20.7 10.5l-6.6 1M12 14.2v6.6"/></svg>',
+  eletrica: '<svg viewBox="0 0 24 24"><path d="M13.5 2.5L4.5 14h7l-1 7.5 9-11.5h-7z"/></svg>',
+  interior: '<svg viewBox="0 0 24 24"><path d="M7.5 3.5h4a1 1 0 0 1 1 1.1L11.7 13H18a1 1 0 0 1 1 1.2l-.7 3.3H8L6.4 14z"/><path d="M9 17.5l-1 3.5M17 17.5l1 3.5"/></svg>',
+};
+// Ícones dos itens de manutenção programada (cartões do livro)
+const SICO = {
+  oleo: '<svg viewBox="0 0 24 24"><path d="M3.5 10h8.5l2 2h3.5l3-2v1.2L16 17H3.5z"/><path d="M6.5 10V7.5h3V10"/><path d="M20 15.5s1.2 1.5 1.2 2.3a1.2 1.2 0 0 1-2.4 0c0-.8 1.2-2.3 1.2-2.3z"/></svg>',
+  fluido_freio: '<svg viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/><path d="M9.5 14.5a2.5 2.5 0 0 0 2.5 2.5"/></svg>',
+  arrefecimento: '<svg viewBox="0 0 24 24"><path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/><path d="M12 9v7.5M17 6h3M17 9.5h2"/></svg>',
+  direcao: FICO.direcao,
+  cambio: FICO.transmissao,
+  velas: '<svg viewBox="0 0 24 24"><path d="M10 2.5h4V5h-4zM8.5 5h7v4h-7zM10 9h4v6h-4z"/><path d="M12 15v3.5M10 18.5h2.5l-1 2.5"/></svg>',
+  filtro_ar: '<svg viewBox="0 0 24 24"><path d="M3 8.5h10.5a3 3 0 1 0-3-3"/><path d="M3 12.5h15a3 3 0 1 1-3 3"/><path d="M3 16.5h6.5"/></svg>',
+  filtro_cabine: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M12 10c-.8-3.8 1-6.6 3.8-5.6 2.4.9.9 4.6-1.8 6M14 12c3.8-.8 6.6 1 5.6 3.8-.9 2.4-4.6.9-6-1.8M12 14c.8 3.8-1 6.6-3.8 5.6-2.4-.9-.9-4.6 1.8-6M10 12c-3.8.8-6.6-1-5.6-3.8.9-2.4 4.6-.9 6 1.8"/></svg>',
+  rodizio: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/><path d="M12 3.5v5M12 15.5v5M3.5 12h5M15.5 12h5"/></svg>',
 };
 // O manual (320 págs) foi dividido em partes de 80 páginas para caber no limite de 25 MB por arquivo do GitHub
 // (ferramentas/dividir-manual.html). Converte a página do PDF original para a parte certa.
@@ -32,8 +63,13 @@ const urlManual = pagina => {
 const TIPOS = { troca: 'Troca de peça', preventiva: 'Manutenção preventiva', reparo: 'Reparo', inspecao: 'Inspeção', outro: 'Outro' };
 const CORES = [['Prata', '#8d9399'], ['Cinza grafite', '#4a4e54'], ['Preto', '#15161a'], ['Branco', '#e9eaec'], ['Vermelho', '#9b1420'], ['Azul', '#1d3d7a']];
 
-const ui = { zona: null, aba: 'pecas', grupo: null, esq: 0, busca: '', buscaGlobal: false, modo: 'ext', pinos: true, reg: { ext: 0, int: 0 }, livrete: false };
+const ui = {
+  zona: null, aba: 'pecas', grupo: null, esq: 0, busca: '', buscaGlobal: false, filtro: 'geral', reg: {}, livrete: false,
+  // livro de manutenção: aba aberta, página e filtros de despesas
+  livro: { aba: 'revisoes', pag: 0, editando: false, desp: { periodo: '12m', valor: 'todos', ordem: 'recentes' } },
+};
 let carro;
+const cfg = () => D.getEstado().config;
 
 // ── Inicialização ─────────────────────────────────────────
 async function iniciar() {
@@ -48,22 +84,30 @@ async function iniciar() {
   carro.vistas = Object.fromEntries(ZONAS.map(z => [z.id, z.vista]));
   carro.setPlaca(D.getEstado().veiculo.placa);
   window.lancer = { carro, ui, dados: D };   // acesso pelo console do navegador (depuração)
+  aplicarTema();
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', aplicarTema);
   await carro.pronto;
   criarPinos();
+  $('#pinos').hidden = !cfg().pinos;
   carro.aoQuadro = atualizarPinos;
   D.aoMudar(() => { atualizarBarra(); if (ui.zona) renderPainel(); if (ui.livrete) renderLivrete(); });
   atualizarBarra();
   ajustarMargem();
+  renderFiltro();
   montarCarrossel();
   document.addEventListener('click', onClique);
+  document.addEventListener('change', onTroca);
   document.addEventListener('keydown', e => {
+    const digitando = /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName);
     if (e.key === 'Escape') {
       if (!$('#modal').hidden) fecharModal();
+      else if (menuAberto()) fecharMenus();
       else if (ui.livrete) fecharLivrete();
       else if (ui.zona) carro.selecionar(null, true);
     }
-    const digitando = /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName);
-    if (!digitando && $('#modal').hidden && !ui.livrete && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) passoRegiao(e.key === 'ArrowLeft' ? -1 : 1);
+    if (digitando || !$('#modal').hidden || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
+    const d = e.key === 'ArrowLeft' ? -1 : 1;
+    if (ui.livrete) paginaLivro(d); else passoRegiao(d);
   });
   $('#carregando').classList.add('some');
   setTimeout(() => $('#carregando').remove(), 500);
@@ -81,6 +125,19 @@ function atualizarBarra() {
     chip.hidden = false;
     chip.innerHTML = `<span class="bola st-${l.status}"></span><span>${esc(textoLembrete(l))}</span>`;
   } else chip.hidden = true;
+  const urgente = D.lembretes().find(x => x.status === 'vencido' || x.status === 'proximo');
+  $('#veic-alerta').hidden = !urgente;
+  $('#veic-alerta').className = urgente ? 'st-' + urgente.status : '';
+  if (!$('#veic-lista').hidden) renderMenuVeiculo();
+}
+// Itens que pedem ação: manutenção vencida/próxima/sem registro e hodômetro desatualizado
+function alertas() {
+  const v = D.getEstado().veiculo, out = D.lembretes().filter(l => ['vencido', 'proximo', 'sem-registro'].includes(l.status));
+  const ordem = { vencido: 0, proximo: 1, 'sem-registro': 3 };
+  out.sort((a, b) => ordem[a.status] - ordem[b.status] || (a.faltaKm ?? 1e9) - (b.faltaKm ?? 1e9));
+  const dias = v.kmData ? Math.round((new Date(D.hoje()) - new Date(v.kmData)) / 864e5) : 999;
+  if (dias > 30) out.splice(out.filter(l => l.status !== 'sem-registro').length, 0, { id: 'km', status: 'proximo', nome: 'Atualizar a quilometragem', dias });
+  return out;
 }
 function textoLembrete(l) {
   if (l.status === 'sem-registro') return `${l.nome}: registre a última vez que foi feito`;
@@ -96,13 +153,14 @@ function criarPinos() {
   $('#pinos').innerHTML = ZONAS.map(z => `<button class="pino" data-pino="${z.id}" title="${esc(z.nome)}"><i></i><span>${esc(z.nome)}</span></button>`).join('');
 }
 function atualizarPinos() {
-  if (!ui.pinos) return;
-  const pos = carro.posicoesTela(), reg = regiaoAtual()?.zonas || [];
+  if (!cfg().pinos) return;
+  const pos = carro.posicoesTela(), reg = zonasRegiao(), f = filtroAtual();
   for (const el of $('#pinos').children) {
     const id = el.dataset.pino, z = ZONA_POR_ID[id], p = pos[id];
     const mostrar = p && p.visivel && (ui.zona ? ui.zona === id
       : reg.length ? reg.includes(id)
-      : z.modo === ui.modo && (ui.modo === 'int' || p.frente > -0.1));
+      : f.zonas ? f.zonas.includes(id) && (f.regioes === 'int' || p.frente > -0.1)
+      : z.externa && p.frente > -0.1);
     el.classList.toggle('oculto', !mostrar);
     el.classList.toggle('on', ui.zona === id);
     if (mostrar) el.style.transform = `translate(${p.x - 9}px, ${p.y - 9}px)`;
@@ -115,9 +173,13 @@ function abrirZona(id) {
   $('#dica').hidden = true;
   document.body.classList.toggle('com-painel', !!id);
   renderChips();
-  if (!id) { $('#painel').hidden = true; $('#painel').classList.remove('cheio'); ajustarMargem(); return; }
-  const z = ZONA_POR_ID[id];
-  if (z && z.modo !== ui.modo) setModo(z.modo, false);
+  if (!id) {
+    // painel fechado: a câmera se afasta e volta ao enquadramento padrão da região atual
+    $('#painel').hidden = true; $('#painel').classList.remove('cheio'); ajustarMargem();
+    aplicarRegiao(true, 0); return;
+  }
+  const z = ZONA_POR_ID[id], f = filtroAtual();
+  if (z && f.zonas && !f.zonas.includes(id)) setFiltro(z.filtro, false);   // peça fora do filtro: troca para o sistema dela
   renderPainel();
   $('#painel').hidden = false;
   ajustarMargem();
@@ -437,26 +499,48 @@ function sugerirPecas(q) {
     <span class="mono">${esc(p.sup?.[0] || p.oem)}</span><span>${esc(traduz(p.desc) || p.desc)}<br><small style="color:var(--txt3)">${esc(p.desc)} · ${p.group}</small></span></button>`).join('')}</div>` : '';
 }
 
-function modalVeiculo() {
+// Atualização rápida do hodômetro (aviso de "quilometragem desatualizada")
+function modalKm() {
   const v = D.getEstado().veiculo;
-  abrirModal(`${cab('Meu veículo')}
-    <div class="cx-corpo">
-      <div class="p-sub" style="margin-bottom:12px"><b style="color:var(--txt)">${VEICULO_BASE.modelo}</b> · ${VEICULO_BASE.versao}<br>${VEICULO_BASE.motor} · ${VEICULO_BASE.mercado}</div>
-      <div class="form" data-veic>
-        <label class="cheio">Apelido<input name="apelido" value="${esc(v.apelido)}"></label>
-        <label>Placa<input name="placa" value="${esc(v.placa)}" placeholder="ABC1D23"></label>
-        <label>Ano/modelo<input name="anoModelo" value="${esc(v.anoModelo)}" placeholder="2012/2013"></label>
-        <label>Chassi (VIN)<input name="chassi" value="${esc(v.chassi)}" placeholder="17 caracteres"></label>
-        <label>Data de produção (aaaa.mm)<input name="producao" value="${esc(v.producao)}" placeholder="2012.05" pattern="\\d{4}\\.\\d{2}"></label>
-        <label>Quilometragem atual<input type="number" inputmode="numeric" name="km" value="${esc(v.km)}"></label>
-        <label>Atualizado em<input type="date" name="kmData" value="${esc(v.kmData)}"></label>
-        <label class="cheio">Cor da pintura<div class="cores">${CORES.map(([n, c]) => `<button type="button" title="${n}" data-cor="${c}" class="${v.cor === c ? 'ativo' : ''}" style="background:${c}"></button>`).join('')}</div></label>
+  abrirModal(`${cab('Atualizar quilometragem')}
+    <div class="cx-corpo"><div class="form" data-km>
+      <label>Quilometragem atual<input type="number" inputmode="numeric" name="km" value="${esc(v.km || '')}" autofocus></label>
+      <label>Data da leitura<input type="date" name="kmData" value="${D.hoje()}"></label>
+    </div><p class="aviso-fonte" style="margin-top:10px">Os alertas de manutenção por km são calculados a partir deste valor.</p></div>
+    <div class="cx-rodape"><button class="btn" data-acao="fechar-modal">Cancelar</button><button class="btn pri" data-acao="salvar-km">Salvar</button></div>`);
+}
+
+// ── Central de configurações ──────────────────────────────
+function modalConfig() {
+  const c = cfg();
+  const seg = (chave, opcoes) => `<div class="seg cfg-seg">${opcoes.map(([v, t]) => `<button data-cfg="${chave}:${v}" class="${c[chave] === v ? 'ativo' : ''}">${t}</button>`).join('')}</div>`;
+  abrirModal(`${cab('Configurações')}
+    <div class="cx-corpo cfg">
+      <div class="secao">Aparência</div>
+      <div class="cfg-linha"><div><b>Tema e fundo do 3D</b><small>Claro, escuro ou igual ao modo noturno do aparelho</small></div>
+        ${seg('tema', [['sistema', 'Sistema'], ['claro', 'Claro'], ['escuro', 'Escuro']])}</div>
+      <div class="cfg-linha"><div><b>Documento do veículo</b><small>Visual da aba Veículo no livro de manutenção</small></div>
+        ${seg('documento', [['branco', 'Branco (novo)'], ['verde', 'Verde (antigo)']])}</div>
+      <div class="cfg-linha"><div><b>Pontos sobre o carro</b><small>Marcadores clicáveis de cada zona</small></div>
+        ${seg('pinos', [[true, 'Mostrar'], [false, 'Ocultar']])}</div>
+      <div class="secao">Dados</div>
+      <div class="menu-lista">
+        <button data-acao="exportar">${ICO.down}<span>Fazer backup (JSON)</span><small>${D.getEstado().registros.length} registros</small></button>
+        <button data-acao="importar">${ICO.up}<span>Restaurar backup</span></button>
+        <button data-acao="exportar-csv">${ICO.lista}<span>Exportar histórico (planilha CSV)</span></button>
       </div>
-      <p class="aviso-fonte" style="margin-top:10px">A data de produção (na etiqueta do veículo) apaga no catálogo as peças de outros períodos.</p>
-      <div class="secao">Dados técnicos (manual)</div>
-      <dl class="spec">${VEICULO_BASE.dimensoes.map(([k, x]) => `<dt>${k}</dt><dd>${x}</dd>`).join('')}</dl>
-    </div>
-    <div class="cx-rodape"><button class="btn" data-acao="fechar-modal">Cancelar</button><button class="btn pri" data-acao="salvar-veiculo">Salvar</button></div>`);
+      <p class="aviso-fonte" style="margin-top:10px">Os dados ficam salvos só neste aparelho. Faça backup regularmente.</p>
+      <div class="secao">Sobre</div>
+      <p class="aviso-fonte">${VEICULO_BASE.modelo} · ${VEICULO_BASE.versao} · ${VEICULO_BASE.motor}. Catálogo: EPC Mitsubishi (Amayama). Manual do proprietário Lancer 2012.</p>
+      ${carro.modeloReal ? `<p class="aviso-fonte">Modelo 3D: “Mitsubishi Lancer Sedan 2009” por <a href="https://sketchfab.com/3d-models/mitsubishi-lancer-sedan-2009-5219adf1a62b4b7393d3c1fc451be88b" target="_blank" rel="noopener">Nieve5677</a> (Sketchfab), licença <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> — simplificado e dividido em peças para este app. Mecânica interna genérica.</p>` : ''}
+    </div>`);
+}
+function aplicarTema() {
+  const t = cfg().tema, raiz = document.documentElement;
+  if (t === 'sistema') delete raiz.dataset.theme; else raiz.dataset.theme = t === 'claro' ? 'light' : 'dark';
+  const escuro = t === 'escuro' || (t === 'sistema' && matchMedia('(prefers-color-scheme: dark)').matches);
+  carro?.setFundoEscuro(escuro);
+  document.querySelector('meta[name="theme-color"]').content = escuro ? '#121418' : '#1f2d44';
 }
 
 function modalLembretes() {
@@ -475,23 +559,6 @@ function modalLembretes() {
     <div class="cx-rodape"><button class="btn pri" data-acao="salvar-lembretes">Salvar intervalos</button></div>`);
 }
 
-function modalGeral() {
-  const sel = modalGeral.zona || '';
-  const regs = D.registrosOrdenados(r => !sel || r.zona === sel);
-  const total = regs.reduce((s, r) => s + D.totalRegistro(r), 0);
-  const kms = D.getEstado().registros.map(r => +r.km).filter(Boolean);
-  const rodado = kms.length > 1 ? Math.max(...kms) - Math.min(...kms) : 0;
-  abrirModal(`${cab('Histórico completo')}
-    <div class="cx-corpo">
-      <div class="resumo"><div><b>${regs.length}</b><small>registros</small></div><div><b>${D.brl(total)}</b><small>total gasto</small></div>
-        <div><b>${rodado ? D.brl(total / rodado) : '—'}</b><small>custo por km</small></div></div>
-      <div class="form" style="grid-template-columns:1fr"><label>Filtrar por zona<select data-filtro-zona><option value="">Todas</option>${ZONAS.map(z => `<option value="${z.id}" ${sel === z.id ? 'selected' : ''}>${esc(z.nome)}</option>`).join('')}</select></label></div>
-      ${regs.length ? regs.map(r => cartaoRegistro(r).replace('<div class="reg-meta">', `<div class="reg-meta">${esc(ZONA_POR_ID[r.zona]?.nome || '')} · `)).join('') : '<div class="vazio">Nenhum registro ainda.</div>'}
-    </div>
-    <div class="cx-rodape"><button class="btn" data-acao="exportar-csv">${ICO.down} Planilha (CSV)</button><button class="btn pri" data-acao="novo-registro">${ICO.mais} Novo registro</button></div>`, true);
-  $('[data-filtro-zona]').addEventListener('change', e => { modalGeral.zona = e.target.value; modalGeral(); });
-}
-
 function modalCatalogo() {
   abrirModal(`${cab('Catálogo completo')}
     <div class="cx-corpo">
@@ -501,42 +568,66 @@ function modalCatalogo() {
     </div>`);
 }
 
-function modalZonas() {
-  const lista = modo => ZONAS.filter(z => z.modo === modo).map(z => `<button data-zona="${z.id}"><span>${esc(z.nome)}</span><small>${D.registrosOrdenados(r => r.zona === z.id).length || ''}</small></button>`).join('');
-  abrirModal(`${cab('Zonas do carro')}<div class="cx-corpo zonas-lista"><h4>Carroceria</h4>${lista('ext')}<h4>Mecânica</h4>${lista('int')}</div>`);
+// ── Menu do veículo (canto superior esquerdo, abre para baixo) ──
+function renderMenuVeiculo() {
+  const n = alertas().length, regs = D.getEstado().registros.length;
+  const item = (aba, ico, t, s, extra = '') => `<button data-livro="${aba}">${ico}<span><b>${t}</b><small>${s}</small></span>${extra}</button>`;
+  $('#veic-lista').innerHTML = `
+    ${item('revisoes', ICO.livro, 'Livro de manutenção', 'revisões programadas')}
+    ${item('historico', ICO.relogio, 'Histórico', regs ? `${regs} serviço${regs > 1 ? 's' : ''} anotado${regs > 1 ? 's' : ''}` : 'linha do tempo por ano')}
+    ${item('despesas', ICO.dinheiro, 'Despesas', 'filtros por data e valor')}
+    ${item('alertas', ICO.sino, 'Alertas', n ? `${n} pendente${n > 1 ? 's' : ''}` : 'tudo em dia', n ? `<span class="badge">${n}</span>` : '')}
+    ${item('veiculo', ICO.doc, 'Dados do veículo', D.getEstado().veiculo.placa || 'documento e hodômetro')}
+    <hr>
+    <button data-acao="catalogo">${ICO.caixa}<span><b>Catálogo de peças</b><small>${D.catalogo.groups.length} grupos · nº OEM</small></span></button>
+    <a href="${urlManual(6)}" target="_blank" rel="noopener">${ICO.pdf}<span><b>Manual do proprietário</b><small>abre o PDF</small></span></a>`;
+}
+const menuAberto = () => !$('#veic-lista').hidden || !$('#filtro-lista').hidden;
+function alternarMenu(qual) {
+  const abrir = qual === 'veic' ? $('#veic-lista').hidden : $('#filtro-lista').hidden;
+  fecharMenus();
+  if (!abrir) return;
+  if (qual === 'veic') { renderMenuVeiculo(); $('#veic-lista').hidden = false; $('[data-acao="menu-veiculo"]').setAttribute('aria-expanded', 'true'); }
+  else { $('#filtro-lista').hidden = false; $('.filtro-btn').setAttribute('aria-expanded', 'true'); document.body.classList.add('filtro-aberto'); }
+}
+function fecharMenus() {
+  $('#veic-lista').hidden = true; $('#filtro-lista').hidden = true;
+  document.querySelectorAll('[aria-expanded]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+  document.body.classList.remove('filtro-aberto');
 }
 
-function modalMenu() {
-  const item = (acao, ico, t, s = '') => `<button data-acao="${acao}">${ico}<span>${t}</span><small>${s}</small></button>`;
-  abrirModal(`${cab('Lancer Garagem')}<div class="cx-corpo menu-lista">
-    ${item('livrete', ICO.livro, 'Livrete de manutenção')}
-    ${item('veiculo', ICO.carro, 'Meu veículo', D.km(D.getEstado().veiculo.km))}
-    ${item('lembretes', ICO.relogio, 'Manutenção programada')}
-    ${item('historico-geral', ICO.lista, 'Histórico completo', D.getEstado().registros.length + ' registros')}
-    ${item('catalogo', ICO.caixa, 'Catálogo completo', D.catalogo.groups.length + ' grupos')}
-    ${item('pinos', ICO.busca, ui.pinos ? 'Ocultar pontos no carro' : 'Mostrar pontos no carro')}
-    ${item('exportar', ICO.down, 'Fazer backup (JSON)')}
-    ${item('importar', ICO.up, 'Restaurar backup')}
-    <a class="btn bloco" style="margin-top:14px" href="${urlManual(6)}" target="_blank" rel="noopener">${ICO.livro} Abrir manual do proprietário (índice)</a>
-    <p class="aviso-fonte" style="margin-top:12px">Os dados ficam salvos neste navegador. Faça backup regularmente.</p>
-    ${carro.modeloReal ? `<p class="aviso-fonte">Modelo 3D: “Mitsubishi Lancer Sedan 2009” por <a href="https://sketchfab.com/3d-models/mitsubishi-lancer-sedan-2009-5219adf1a62b4b7393d3c1fc451be88b" target="_blank" rel="noopener">Nieve5677</a> (Sketchfab), licença <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> — simplificado e dividido em peças para este app. Mecânica interna genérica.</p>` : ''}
-  </div>`);
+// ── Filtro de camadas (canto inferior esquerdo, abre para cima) ──
+const filtroAtual = () => FILTRO_POR_ID[ui.filtro];
+function renderFiltro() {
+  const f = filtroAtual();
+  const b = $('.filtro-btn');
+  b.innerHTML = `${FICO[f.id]}<span><small>Filtro</small><b>${esc(f.nome)}</b></span>${ICO.seta}`;
+  b.classList.toggle('com-filtro', !!f.zonas);
+  $('#filtro-lista').innerHTML = FILTROS.map((x, i) => `<button role="option" aria-selected="${x.id === f.id}" data-filtro="${x.id}" class="${x.id === f.id ? 'ativo' : ''} f-${x.id}" style="--i:${FILTROS.length - i}">
+    <span class="f-ico">${FICO[x.id]}</span><span><b>${esc(x.nome)}</b><small>${esc(x.sub)}</small></span></button>`).join('');
 }
-
-// ── Ações ─────────────────────────────────────────────────
-// moverCamera = false quando a troca de modo veio de clicar numa peça (a peça é que define o enquadramento)
-function setModo(m, moverCamera = true) {
-  if (ui.modo === m) return;
-  ui.modo = m;
-  document.querySelectorAll('[data-modo]').forEach(b => b.classList.toggle('ativo', b.dataset.modo === m));
-  carro.setRaioX(m === 'int');
-  if (moverCamera && ui.zona && ZONA_POR_ID[ui.zona].modo !== m) carro.selecionar(null, true);
+// moverCamera = false quando a troca veio de clicar numa peça (a peça é que define o enquadramento)
+function setFiltro(id, moverCamera = true) {
+  fecharMenus();
+  if (ui.filtro === id) return;
+  ui.filtro = id;
+  const f = filtroAtual();
+  carro.setFiltro(f.zonas, f.regioes === 'int');
+  renderFiltro();
+  if (moverCamera && ui.zona && f.zonas && !f.zonas.includes(ui.zona)) carro.selecionar(null, true);
   aplicarRegiao(moverCamera, 0);
 }
 
 // ── Menu deslizante de regiões ────────────────────────────
-const regioes = () => REGIOES[ui.modo];
-const regiaoAtual = () => regioes()[ui.reg[ui.modo]];
+// Cada filtro usa a lista de vistas de fora (ext) ou da mecânica (int), só com as regiões que têm peças dele
+function regioes() {
+  const f = filtroAtual(), base = REGIOES[f.regioes];
+  if (!f.zonas) return base;
+  return [{ ...base[0], nome: 'Visão geral' }, ...base.slice(1).filter(r => r.zonas.some(z => f.zonas.includes(z)))];
+}
+const regiaoAtual = () => { const l = regioes(); return l[Math.min(ui.reg[ui.filtro] || 0, l.length - 1)]; };
+// zonas da região atual que pertencem ao filtro (são as destacadas)
+const zonasRegiao = () => { const f = filtroAtual(), zs = regiaoAtual()?.zonas || []; return f.zonas ? zs.filter(z => f.zonas.includes(z)) : zs; };
 function montarCarrossel() {
   const pista = $('[data-pista]');
   let x0 = null, dx = 0;
@@ -557,25 +648,24 @@ function montarCarrossel() {
 }
 function passoRegiao(d) {
   const n = regioes().length;
-  ui.reg[ui.modo] = (ui.reg[ui.modo] + d + n) % n;   // volta infinita
+  ui.reg[ui.filtro] = ((ui.reg[ui.filtro] || 0) + d + n) % n;   // volta infinita
   if (ui.zona) carro.selecionar(null, true);
   aplicarRegiao(true, d);
 }
 function aplicarRegiao(moverCamera, dir) {
-  const lista = regioes(), i = ui.reg[ui.modo], r = lista[i], n = lista.length;
+  const lista = regioes(), n = lista.length, i = ui.reg[ui.filtro] = Math.min(ui.reg[ui.filtro] || 0, n - 1), r = lista[i];
   const t = $('.car-titulo');
-  t.querySelector('small').textContent = ui.modo === 'ext' ? 'Carroceria' : 'Mecânica';
+  t.querySelector('small').textContent = filtroAtual().nome;
   t.querySelector('b').textContent = r.nome;
-  $('[data-viz="-1"]').textContent = lista[(i - 1 + n) % n].nome;
-  $('[data-viz="1"]').textContent = lista[(i + 1) % n].nome;
+  $('[data-viz="-1"]').textContent = n > 1 ? lista[(i - 1 + n) % n].nome : '';
+  $('[data-viz="1"]').textContent = n > 1 ? lista[(i + 1) % n].nome : '';
   $('[data-pontos]').innerHTML = lista.map((_, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('');
   if (dir) { t.classList.remove('de-dir', 'de-esq'); void t.offsetWidth; t.classList.add(dir > 0 ? 'de-dir' : 'de-esq'); }
-  carro.setRegiao(r.zonas, moverCamera && !ui.zona ? r : null);
+  carro.setRegiao(zonasRegiao(), moverCamera && !ui.zona ? r : null);
   renderChips();
 }
 function renderChips() {
-  const r = regiaoAtual();
-  $('#chips').innerHTML = (r?.zonas || []).map(id => `<button data-pino="${id}" class="${ui.zona === id ? 'on' : ''}">${esc(ZONA_POR_ID[id].nome)}</button>`).join('');
+  $('#chips').innerHTML = zonasRegiao().map(id => `<button data-pino="${id}" class="${ui.zona === id ? 'on' : ''}">${esc(ZONA_POR_ID[id].nome)}</button>`).join('');
 }
 
 // Rótulo que segue o mouse: o que o clique vai selecionar e se dá para atravessar
@@ -591,75 +681,244 @@ function mostrarRotulo(id, e, info) {
 }
 
 // ── Livrete de manutenção ─────────────────────────────────
-function abrirLivrete() {
-  ui.livrete = true; fecharModal();
+// Abas do livro (cada uma com a cor da orelha). O conteúdo nunca rola: o que não cabe vai para a página seguinte (‹ ›).
+const ABAS_LIVRO = [['veiculo', 'Veículo'], ['historico', 'Histórico'], ['revisoes', 'Revisões'], ['despesas', 'Despesas'], ['alertas', 'Alertas']];
+function abrirLivrete(aba) {
+  fecharMenus(); fecharModal();
+  if (aba && aba !== ui.livro.aba) { ui.livro.aba = aba; ui.livro.pag = 0; ui.livro.editando = false; }
+  ui.livrete = true;
   $('#rotulo').hidden = true;
-  renderLivrete();
   $('#livrete').hidden = false;
+  renderLivrete();
   carro.pausar(true);   // o 3D fica parado e desfocado atrás do caderno
 }
 function fecharLivrete() {
+  if (ui.livro.editando) cancelarEdicaoVeiculo();
   ui.livrete = false; $('#livrete').hidden = true; $('#livrete').innerHTML = '';
   carro.pausar(false);
 }
+function paginaLivro(d) {
+  const n = renderLivrete.paginas || 1, p = ui.livro.pag + d;
+  if (p < 0 || p >= n) return;
+  ui.livro.pag = p; renderLivrete();
+}
+window.addEventListener('resize', () => { if (ui.livrete) { clearTimeout(paginaLivro.h); paginaLivro.h = setTimeout(renderLivrete, 120); } });
+
+function carimbo(status) {
+  return {
+    ok: '<span class="carimbo ok"><b>Revisado</b><small>OK</small></span>',
+    vencido: '<span class="carimbo vencido"><b>Vencido</b></span>',
+    proximo: '<span class="carimbo proximo"><small>Vence em breve</small><b>Atenção</b></span>',
+    'sem-registro': '<span class="carimbo neutro"><b>Sem registro</b></span>',
+    'sem-intervalo': '<span class="carimbo neutro"><b>A definir</b></span>',
+  }[status] || '';
+}
+function quandoLembrete(l) {
+  if (l.status === 'sem-registro') return 'Registre a última vez que foi feito';
+  if (l.status === 'sem-intervalo') return 'Defina o intervalo em “Ajustar intervalos”';
+  const p = [];
+  if (l.proxKm) p.push(`aos ${D.km(l.proxKm)}`);
+  if (l.proxData) p.push(`até ${D.dataBR(l.proxData)}`);
+  return `Próxima ${p.join(' ou ')} · última ${D.dataBR(l.ultimo.data)}`;
+}
+const cartaoLembrete = (l, sub) => `<button class="l-card st-borda-${l.status}" data-servico="${l.id}">
+  <span class="l-ico">${SICO[l.id] || ICO.chave}</span>
+  <span class="l-txt"><b>${esc(l.nome)}</b><small>${esc(sub ?? quandoLembrete(l))}</small></span>${carimbo(l.status)}</button>`;
+
+// Despesas: período e faixa de valor
+const PERIODOS = [['30d', 'Últimos 30 dias'], ['3m', 'Últimos 3 meses'], ['12m', 'Últimos 12 meses'], ['ano', 'Este ano'], ['anoPassado', 'Ano passado'], ['tudo', 'Todo o período']];
+const VALORES = [['todos', 'Qualquer valor'], ['ate200', 'Até R$ 200'], ['200a1000', 'R$ 200 a R$ 1.000'], ['mais1000', 'Acima de R$ 1.000']];
+const ORDENS = [['recentes', 'Mais recentes'], ['antigas', 'Mais antigas'], ['maior', 'Maior valor'], ['menor', 'Menor valor']];
+function despesasFiltradas() {
+  const { periodo, valor, ordem } = ui.livro.desp, hoje = new Date(D.hoje() + 'T12:00'), ano = hoje.getFullYear();
+  const ini = { '30d': new Date(hoje - 30 * 864e5), '3m': new Date(new Date(hoje).setMonth(hoje.getMonth() - 3)), '12m': new Date(new Date(hoje).setFullYear(ano - 1)),
+    ano: new Date(ano, 0, 1), anoPassado: new Date(ano - 1, 0, 1), tudo: null }[periodo];
+  const fim = periodo === 'anoPassado' ? new Date(ano, 0, 1) : null;
+  const faixa = { todos: [0, Infinity], ate200: [0, 200], '200a1000': [200, 1000], mais1000: [1000, Infinity] }[valor];
+  const regs = D.registrosOrdenados(r => {
+    const d = new Date(r.data + 'T12:00'), v = D.totalRegistro(r);
+    return (!ini || d >= ini) && (!fim || d < fim) && v >= faixa[0] && v <= faixa[1];
+  });
+  if (ordem === 'antigas') regs.reverse();
+  if (ordem === 'maior') regs.sort((a, b) => D.totalRegistro(b) - D.totalRegistro(a));
+  if (ordem === 'menor') regs.sort((a, b) => D.totalRegistro(a) - D.totalRegistro(b));
+  return regs;
+}
+
+// Distribui os itens em páginas medindo a altura real de cada um. Item com `cab` é título de grupo
+// (ex.: o ano no histórico): não fica sozinho no fim da página e reaparece como "continuação" na página seguinte.
+function paginar(lista, itens) {
+  lista.innerHTML = itens.map(i => i.html).join('');
+  const alt = lista.clientHeight, gap = 8, hs = [...lista.children].map(c => c.offsetHeight);
+  const paginas = []; let pag = [], usado = 0, grupo = null;
+  const fecha = () => { if (pag.length) paginas.push(pag); pag = []; usado = 0; };
+  const poe = (html, h) => { usado += (pag.length ? gap : 0) + h; pag.push(html); };
+  itens.forEach((it, k) => {
+    const h = hs[k];
+    if (it.cab) {
+      const prox = hs[k + 1] || 0;
+      if (pag.length && usado + gap + h + gap + prox > alt) fecha();
+      grupo = it; poe(it.html, h); return;
+    }
+    if (pag.length && usado + gap + h > alt) {
+      fecha();
+      if (grupo?.cont) poe(grupo.cont, hs[itens.indexOf(grupo)]);
+    }
+    poe(it.html, h);
+  });
+  fecha();
+  return paginas.length ? paginas : [[]];
+}
 function renderLivrete() {
-  const v = D.getEstado().veiculo, regs = D.registrosOrdenados(), ls = D.lembretes();
-  const ordem = { vencido: 0, proximo: 1, ok: 2, 'sem-registro': 3, 'sem-intervalo': 4 };
-  const rotulo = { vencido: 'vencido', proximo: 'em breve', ok: 'em dia', 'sem-registro': 'sem registro', 'sem-intervalo': 'a definir' };
-  const total = regs.reduce((s, r) => s + D.totalRegistro(r), 0);
-  const umAno = new Date(); umAno.setFullYear(umAno.getFullYear() - 1);
-  const ano = regs.filter(r => new Date(r.data) >= umAno).reduce((s, r) => s + D.totalRegistro(r), 0);
-  const quando = l => {
-    if (l.status === 'sem-registro') return 'Registre a última vez que foi feito para calcular a próxima.';
-    if (l.status === 'sem-intervalo') return l.detalhe;
-    const p = [];
-    if (l.proxKm) p.push(`aos ${D.km(l.proxKm)}`);
-    if (l.proxData) p.push(`até ${D.dataBR(l.proxData)}`);
-    return `Próxima ${p.join(' ou ')} · última em ${D.dataBR(l.ultimo.data)} (${D.km(l.ultimo.km)})`;
-  };
+  const L = ui.livro, aba = L.aba, nAl = alertas().length;
+  const c = conteudoLivro[aba]();
   $('#livrete').innerHTML = `
-  <div class="caderno" role="dialog" aria-modal="true" aria-label="Livrete de manutenção">
-    <button class="fechar-l" data-acao="fechar-livrete" title="Fechar">${ICO.x}</button>
-    <section class="pagina esq">
-      <h1>Livrete de manutenção</h1>
-      <p class="sub">${VEICULO_BASE.modelo} · ${VEICULO_BASE.versao} · motor ${VEICULO_BASE.motor}</p>
-      <dl class="ficha">
-        <dt>Veículo</dt><dd>${esc(v.apelido || '—')}</dd>
-        <dt>Placa</dt><dd>${esc(v.placa || '—')}</dd>
-        <dt>Chassi</dt><dd class="mono">${esc(v.chassi || '—')}</dd>
-        <dt>Ano / produção</dt><dd>${esc(v.anoModelo || '—')}${v.producao ? ' · ' + esc(v.producao) : ''}</dd>
-        <dt>Hodômetro</dt><dd><span class="mao">${D.km(v.km)}</span> <span style="color:#7a7266;font-weight:400">em ${D.dataBR(v.kmData)}</span></dd>
-      </dl>
-      <h2>Próximas manutenções</h2>
-      ${[...ls].sort((a, b) => ordem[a.status] - ordem[b.status] || (a.faltaKm ?? 1e9) - (b.faltaKm ?? 1e9)).map(l => `
-        <div class="linha-l"><div><b>${esc(l.nome)}</b><span class="quando">${esc(quando(l))}</span></div>
-        <span class="carimbo ${l.status}">${rotulo[l.status]}</span></div>`).join('')}
-      <h2>Resumo</h2>
-      <div class="resumo-l">
-        <div><b>${D.brl(total)}</b><small>gasto total</small></div>
-        <div><b>${D.brl(ano)}</b><small>últimos 12 meses</small></div>
-        <div><b>${regs.length}</b><small>serviços anotados</small></div>
+  <div class="caderno aba-${aba}" role="dialog" aria-modal="true" aria-label="Livro de manutenção">
+    <nav class="l-abas" role="tablist">${ABAS_LIVRO.map(([k, t]) => `<button role="tab" aria-selected="${k === aba}" class="l-aba ab-${k} ${k === aba ? 'ativo' : ''}" data-livro="${k}">${t}${k === 'alertas' && nAl ? `<span class="badge">${nAl}</span>` : ''}</button>`).join('')}</nav>
+    <div class="folha">
+      <div class="espiral" aria-hidden="true"></div>
+      <button class="fechar-l" data-acao="fechar-livrete" title="Fechar">${ICO.x}</button>
+      <header class="l-cab"><div class="l-tit"><h1>${c.titulo}</h1><p class="sub">${c.sub || ''}</p></div>${c.ferramentas || ''}</header>
+      ${c.topo || ''}
+      <div class="l-corpo ${c.itens ? '' : 'livre'}">
+        ${c.itens ? `<button class="l-pag" data-lpag="-1" aria-label="Página anterior">${ICO.voltar}</button>` : ''}
+        <div class="l-lista" data-lista>${c.itens ? '' : c.corpo}</div>
+        ${c.itens ? `<button class="l-pag" data-lpag="1" aria-label="Próxima página"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>` : ''}
       </div>
-    </section>
-    <section class="pagina dir">
-      <h1>Registro de serviços</h1>
-      <p class="sub">Toque numa linha para ver ou corrigir o lançamento.</p>
-      ${regs.length ? `<table class="razao">
-        <thead><tr><th>Data</th><th>Km</th><th>Serviço</th><th class="num">Valor</th></tr></thead>
-        <tbody>${regs.map(r => `<tr class="reg-l" data-editar="${r.id}">
-          <td>${D.dataBR(r.data)}</td><td class="num">${(+r.km || 0).toLocaleString('pt-BR')}</td>
-          <td><b>${esc(r.titulo || TIPOS[r.tipo])}</b><span class="pecas-l">${esc(ZONA_POR_ID[r.zona]?.nome || '')}${(r.pecas || []).length ? ' · ' + r.pecas.map(p => esc((p.oem ? p.oem + ' ' : '') + (p.desc || ''))).join(', ') : ''}${r.oficina ? ' · ' + esc(r.oficina) : ''}</span></td>
-          <td class="num">${D.brl(D.totalRegistro(r))}</td></tr>`).join('')}</tbody>
-        <tfoot><tr><td colspan="3">Total</td><td class="num">${D.brl(total)}</td></tr></tfoot>
-      </table>` : '<div class="mao-vazio">Nenhum serviço anotado ainda.<br>Comece pela última troca de óleo!</div>'}
-      <div class="acoes-l">
-        <button class="pri" data-acao="novo-registro">+ Anotar serviço</button>
-        <button data-acao="veiculo">Dados do veículo</button>
-        <button data-acao="lembretes">Intervalos</button>
-        ${regs.length ? '<button data-acao="exportar-csv">Exportar planilha</button>' : ''}
-      </div>
-    </section>
+      <footer class="l-rod"><span class="l-num" data-num></span><div class="l-acoes">${c.acoes || ''}</div></footer>
+    </div>
   </div>`;
+  renderLivrete.paginas = 1;
+  if (!c.itens) return;
+  const lista = $('[data-lista]');
+  if (!c.itens.length) { lista.innerHTML = c.vazio; lista.parentElement.classList.add('livre'); document.querySelectorAll('.l-pag').forEach(b => b.hidden = true); return; }
+  const paginas = paginar(lista, c.itens);
+  renderLivrete.paginas = paginas.length;
+  L.pag = Math.min(L.pag, paginas.length - 1);
+  lista.innerHTML = paginas[L.pag].join('');
+  lista.classList.remove('vira'); void lista.offsetWidth; lista.classList.add('vira');
+  const [ant, prox] = document.querySelectorAll('.l-pag');
+  ant.disabled = L.pag === 0; prox.disabled = L.pag === paginas.length - 1;
+  ant.hidden = prox.hidden = paginas.length < 2;
+  $('[data-num]').innerHTML = paginas.length > 1 ? paginas.map((_, i) => `<i class="${i === L.pag ? 'on' : ''}"></i>`).join('') + `<span>${L.pag + 1} / ${paginas.length}</span>` : '';
+  arrastarPagina(lista);
+}
+// deslizar o dedo sobre a página vira a folha
+function arrastarPagina(el) {
+  let x0 = null;
+  el.onpointerdown = e => { x0 = e.clientX; };
+  el.onpointerup = e => { if (x0 === null) return; const dx = e.clientX - x0; x0 = null; if (Math.abs(dx) > 50) { paginaLivro(dx < 0 ? 1 : -1); } };
+}
+
+const conteudoLivro = {
+  revisoes() {
+    const ordem = { vencido: 0, proximo: 1, ok: 2, 'sem-registro': 3, 'sem-intervalo': 4 };
+    const ls = D.lembretes().sort((a, b) => ordem[a.status] - ordem[b.status] || (a.faltaKm ?? 1e9) - (b.faltaKm ?? 1e9));
+    const ok = ls.filter(l => l.status === 'ok').length;
+    return {
+      titulo: 'Revisões', sub: `Manutenção programada do manual · ${ok} de ${ls.length} em dia · toque para registrar`,
+      itens: ls.map(l => ({ html: cartaoLembrete(l) })),
+      acoes: `<button data-acao="lembretes">Ajustar intervalos</button><button class="pri" data-acao="novo-registro">+ Anotar serviço</button>`,
+    };
+  },
+  historico() {
+    const regs = D.registrosOrdenados(), anos = {};
+    for (const r of regs) (anos[(r.data || '????').slice(0, 4)] ||= []).push(r);
+    const itens = [];
+    for (const [ano, rs] of Object.entries(anos).sort((a, b) => b[0].localeCompare(a[0]))) {
+      const tot = rs.reduce((s, r) => s + D.totalRegistro(r), 0);
+      const cab = cont => `<div class="l-ano"><b>${ano}</b><span>${cont ? 'continuação' : `${rs.length} serviço${rs.length > 1 ? 's' : ''} · ${D.brl(tot)}`}</span></div>`;
+      itens.push({ cab: true, html: cab(false), cont: cab(true) });
+      rs.forEach((r, i) => itens.push({ html: `<button class="l-evento ${i === rs.length - 1 ? 'ultimo' : ''}" data-editar="${r.id}">
+        <span class="l-data">${D.dataBR(r.data).slice(0, 5)}</span>
+        <span class="l-txt"><b>${esc(r.titulo || TIPOS[r.tipo])}</b><small>${esc(ZONA_POR_ID[r.zona]?.nome || '')} · ${D.km(r.km)}${r.oficina ? ' · ' + esc(r.oficina) : ''}</small></span>
+        <span class="l-valor">${D.brl(D.totalRegistro(r))}</span></button>` }));
+    }
+    return {
+      titulo: 'Histórico', sub: regs.length ? `Linha do tempo por ano · ${regs.length} serviço${regs.length > 1 ? 's' : ''} · toque para ver ou corrigir` : 'Linha do tempo por ano',
+      itens, vazio: '<div class="mao-vazio">Nenhum serviço anotado ainda.<br>Comece pela última troca de óleo!</div>',
+      acoes: `<button class="pri" data-acao="novo-registro">+ Anotar serviço</button>`,
+    };
+  },
+  despesas() {
+    const d = ui.livro.desp, regs = despesasFiltradas();
+    const total = regs.reduce((s, r) => s + D.totalRegistro(r), 0);
+    const mao = regs.reduce((s, r) => s + (+r.maoDeObra || 0), 0), pecas = total - mao;
+    const kms = regs.map(r => +r.km).filter(Boolean), rodado = kms.length > 1 ? Math.max(...kms) - Math.min(...kms) : 0;
+    const sel = (nome, ops, v) => `<label class="l-sel"><select data-desp="${nome}">${ops.map(([k, t]) => `<option value="${k}" ${k === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>`;
+    const pct = total ? Math.round(pecas / total * 100) : 0;
+    return {
+      titulo: 'Despesas', sub: 'Peças e mão de obra anotadas no histórico',
+      ferramentas: `<div class="l-filtros">${sel('periodo', PERIODOS, d.periodo)}${sel('valor', VALORES, d.valor)}${sel('ordem', ORDENS, d.ordem)}</div>`,
+      topo: `<div class="l-resumo">
+        <div><b>${D.brl(total)}</b><small>${regs.length} serviço${regs.length === 1 ? '' : 's'}</small></div>
+        <div><b>${rodado ? D.brl(total / rodado) : '—'}</b><small>custo por km</small></div>
+        <div class="l-barra"><span><i style="width:${pct}%"></i></span><small>peças ${D.brl(pecas)} · mão de obra ${D.brl(mao)}</small></div></div>`,
+      itens: regs.map(r => ({ html: `<button class="l-desp" data-editar="${r.id}">
+        <span class="l-data">${D.dataBR(r.data)}</span>
+        <span class="l-txt"><b>${esc(r.titulo || TIPOS[r.tipo])}</b><small>${esc(ZONA_POR_ID[r.zona]?.nome || '')} · ${esc(TIPOS[r.tipo] || '')}</small></span>
+        <b class="l-valor">${D.brl(D.totalRegistro(r))}</b></button>` })),
+      vazio: `<div class="mao-vazio">Nenhuma despesa ${D.getEstado().registros.length ? 'com estes filtros' : 'anotada ainda'}.</div>`,
+      acoes: D.getEstado().registros.length ? `<button data-acao="exportar-csv">Exportar planilha</button>` : '',
+    };
+  },
+  alertas() {
+    const al = alertas();
+    return {
+      titulo: 'Alertas', sub: al.length ? 'O que precisa de atenção agora · toque para resolver' : 'Nada pendente',
+      itens: al.map(l => l.id === 'km'
+        ? { html: `<button class="l-card st-borda-proximo" data-acao="atualizar-km"><span class="l-ico">${ICO.hodometro}</span>
+            <span class="l-txt"><b>${esc(l.nome)}</b><small>Última leitura há ${l.dias > 900 ? 'muito tempo' : l.dias + ' dias'} (${D.km(D.getEstado().veiculo.km)}) · toque para atualizar</small></span>
+            <span class="carimbo proximo"><b>Atualizar</b></span></button>` }
+        : { html: cartaoLembrete(l, l.status === 'sem-registro' ? 'Registre a última vez que foi feito para calcular a próxima' : textoLembrete(l).replace(l.nome + ': ', '')) }),
+      vazio: '<div class="tudo-ok"><span class="carimbo ok grande"><b>Tudo em dia</b><small>OK</small></span><p>Nenhuma manutenção vencida ou próxima.</p></div>',
+      acoes: `<button data-acao="atualizar-km">Atualizar km</button>`,
+    };
+  },
+  veiculo() {
+    const v = D.getEstado().veiculo, ed = ui.livro.editando, estilo = cfg().documento;
+    const corNome = (CORES.find(([, c]) => c === (ui.livro.cor || v.cor)) || ['—'])[0];
+    const campo = (rot, nome, { cls = '', valor, ph = '', tipo = 'text' } = {}) => `<div class="d-campo ${cls}"><label>${rot}</label>${
+      ed && nome ? `<input name="${nome}" type="${tipo}" value="${esc(v[nome] ?? '')}" placeholder="${ph}" ${tipo === 'number' ? 'inputmode="numeric"' : ''}>`
+        : `<span>${esc(valor ?? (v[nome] || '—'))}</span>`}</div>`;
+    return {
+      titulo: 'Veículo', sub: `${VEICULO_BASE.modelo} · ${VEICULO_BASE.versao}`,
+      ferramentas: `<div class="seg cfg-seg l-estilo">${[['branco', 'Branco'], ['verde', 'Verde']].map(([k, t]) => `<button data-cfg="documento:${k}" class="${estilo === k ? 'ativo' : ''}">${t}</button>`).join('')}</div>`,
+      corpo: `<div class="doc doc-${estilo} ${ed ? 'editando' : ''}" data-doc>
+        <div class="d-topo"><div><b>Ficha do veículo</b><small>Visual inspirado no CRLV · sem valor de documento</small></div><img src="icones/icone-192.png" alt=""></div>
+        <div class="d-grade">
+          ${campo('Código Renavam', 'renavam', { cls: 'mono', ph: '11 dígitos' })}
+          ${campo('Placa', 'placa', { cls: 'mono destaque', ph: 'ABC1D23' })}
+          ${campo('Exercício', 'exercicio', { ph: String(new Date().getFullYear()) })}
+          ${campo('Ano fabricação', 'anoFab', { ph: '2012' })}
+          ${campo('Ano modelo', 'anoModelo', { ph: '2013' })}
+          ${campo('Nome', 'proprietario', { cls: 'largo', ph: 'Proprietário (opcional)' })}
+          ${campo('Categoria', 'categoria')}
+          ${campo('Chassi', 'chassi', { cls: 'largo mono', ph: '17 caracteres' })}
+          ${campo('Marca / Modelo / Versão', null, { cls: 'largo', valor: 'MITSUBISHI/LANCER GT 2.0 CY4A' })}
+          ${campo('Espécie / Tipo', null, { valor: 'PASSAGEIRO / AUTOMÓVEL' })}
+          ${campo('Combustível', 'combustivel')}
+          ${campo('Cor predominante', null, { valor: corNome })}
+          ${campo('Potência / Cilindrada', null, { valor: '160CV / 1998' })}
+          ${campo('Nº do motor', 'motorNum', { cls: 'mono' })}
+          ${campo('Local', 'municipio', { cls: 'largo', ph: 'Município' })}
+          ${campo('UF', 'uf', { ph: 'UF' })}
+        </div>
+        <div class="d-app">
+          ${campo('Apelido no app', 'apelido')}
+          ${campo('Hodômetro', 'km', { tipo: 'number', valor: D.km(v.km) + (v.kmData ? ' em ' + D.dataBR(v.kmData) : '') })}
+          ${campo('Produção (aaaa.mm)', 'producao', { ph: '2012.05', valor: v.producao || '—' })}
+          <div class="d-campo"><label>Cor no 3D</label><div class="cores">${CORES.map(([n, c]) => `<button type="button" title="${n}" ${ed ? `data-cor="${c}"` : 'disabled'} class="${(ui.livro.cor || v.cor) === c ? 'ativo' : ''}" style="background:${c}"></button>`).join('')}</div></div>
+        </div>
+      </div>`,
+      acoes: ed ? `<button data-acao="cancelar-veiculo">Cancelar</button><button class="pri" data-acao="salvar-veiculo">Salvar</button>`
+        : `<button class="pri" data-acao="editar-veiculo">Editar dados</button>`,
+    };
+  },
+};
+function cancelarEdicaoVeiculo() {
+  ui.livro.editando = false;
+  if (ui.livro.cor) { carro.setCor(D.getEstado().veiculo.cor); ui.livro.cor = null; }
 }
 
 function baixar(blob, nome) {
@@ -678,11 +937,27 @@ function irParaGrupo(gid) {
 }
 
 function onClique(e) {
-  const t = e.target.closest('[data-passo],[data-acao],[data-aba],[data-grupo],[data-esq],[data-peca],[data-modo],[data-pino],[data-zona],[data-editar],[data-trocar],[data-servico],[data-copiar],[data-rmpeca],[data-sugpeca],[data-cor],[data-sec]');
-  if (!t) { if (e.target.id === 'modal') fecharModal(); return; }
+  // clique fora dos menus suspensos fecha-os
+  if (!e.target.closest('#veic') && !e.target.closest('#filtro') && menuAberto()) fecharMenus();
+  const t = e.target.closest('[data-passo],[data-acao],[data-aba],[data-grupo],[data-esq],[data-peca],[data-filtro],[data-livro],[data-lpag],[data-cfg],[data-pino],[data-zona],[data-editar],[data-trocar],[data-servico],[data-copiar],[data-rmpeca],[data-sugpeca],[data-cor],[data-sec]');
+  if (!t) {
+    if (e.target.id === 'modal') fecharModal();
+    else if (e.target.id === 'livrete') fecharLivrete();   // toque fora do caderno
+    return;
+  }
   const ds = t.dataset;
   if (ds.passo) return passoRegiao(+ds.passo);
-  if (ds.modo) return setModo(ds.modo);
+  if (ds.filtro) return setFiltro(ds.filtro);
+  if (ds.livro) { if (ui.livro.editando) cancelarEdicaoVeiculo(); return abrirLivrete(ds.livro); }
+  if (ds.lpag) return paginaLivro(+ds.lpag);
+  if (ds.cfg) {
+    const [k, v] = ds.cfg.split(':'), val = v === 'true' ? true : v === 'false' ? false : v;
+    D.atualizarConfig({ [k]: val });
+    if (k === 'tema') aplicarTema();
+    if (k === 'pinos') $('#pinos').hidden = !val;
+    if (!$('#modal').hidden) modalConfig();
+    return;
+  }
   if (ds.pino) return carro.selecionar(ds.pino, true);
   if (ds.zona) { fecharModal(); return carro.selecionar(ds.zona, true); }
   if (ds.aba) { ui.aba = ds.aba; ui.grupo = null; return renderPainel(); }
@@ -702,14 +977,24 @@ function onClique(e) {
   if (ds.copiar) { navigator.clipboard?.writeText(ds.copiar).then(() => toast('Nº OEM copiado'), () => toast(ds.copiar)); return; }
   if (ds.rmpeca) { rascunho.pecas.splice(+ds.rmpeca, 1); return renderRegistro(); }
   if (ds.sugpeca) { const p = JSON.parse(decodeURIComponent(ds.sugpeca)); rascunho.pecas.push({ ...p, qtd: 1, preco: '' }); return renderRegistro(); }
-  if (ds.cor) { document.querySelectorAll('[data-cor]').forEach(b => b.classList.toggle('ativo', b === t)); carro.setCor(ds.cor); modalVeiculo.cor = ds.cor; return; }
+  if (ds.cor) { document.querySelectorAll('[data-cor]').forEach(b => b.classList.toggle('ativo', b === t)); carro.setCor(ds.cor); ui.livro.cor = ds.cor; return; }
   if (ds.sec) { const g = t.nextElementSibling; g.hidden = !g.hidden; return; }
 
   switch (ds.acao) {
     case 'fechar-zona': return carro.selecionar(null, true);
-    case 'fechar-modal': if (modalVeiculo.cor) { carro.setCor(D.getEstado().veiculo.cor); modalVeiculo.cor = null; } return fecharModal();
-    case 'livrete': return abrirLivrete();
+    case 'fechar-modal': return fecharModal();
+    case 'menu-veiculo': return alternarMenu('veic');
+    case 'filtro': return alternarMenu('filtro');
+    case 'config': fecharMenus(); return modalConfig();
     case 'fechar-livrete': return fecharLivrete();
+    case 'editar-veiculo': ui.livro.editando = true; return renderLivrete();
+    case 'cancelar-veiculo': cancelarEdicaoVeiculo(); return renderLivrete();
+    case 'atualizar-km': return modalKm();
+    case 'salvar-km': {
+      const f = $('[data-km]'), km = +f.querySelector('[name=km]').value;
+      if (!km) return toast('Informe a quilometragem');
+      D.atualizarVeiculo({ km, kmData: f.querySelector('[name=kmData]').value || D.hoje() }); fecharModal(); return toast('Quilometragem atualizada');
+    }
     case 'voltar-grupos': ui.grupo = null; return renderPainel();
     case 'busca-global': ui.buscaGlobal = t.checked; return atualizarResultados(ZONA_POR_ID[ui.zona]);
     case 'novo-registro': return modalRegistro();
@@ -725,34 +1010,38 @@ function onClique(e) {
     case 'excluir-registro':
       if (confirm('Excluir este registro? Esta ação não pode ser desfeita.')) { D.excluirRegistro(rascunho.id); fecharModal(); toast('Registro excluído'); }
       return;
-    case 'veiculo': return modalVeiculo();
     case 'salvar-veiculo': {
-      const f = $('[data-veic]'), dados = {};
-      f.querySelectorAll('input[name]').forEach(i => { dados[i.name] = i.type === 'number' ? +i.value || 0 : i.value.trim(); });
+      const dados = {}, v = D.getEstado().veiculo;
+      $('[data-doc]').querySelectorAll('input[name]').forEach(i => { dados[i.name] = i.type === 'number' ? +i.value || 0 : i.value.trim(); });
       if (dados.producao && !/^\d{4}\.\d{2}$/.test(dados.producao)) return toast('Data de produção no formato aaaa.mm');
-      if (modalVeiculo.cor) dados.cor = modalVeiculo.cor;
-      modalVeiculo.cor = null; D.atualizarVeiculo(dados); carro.setPlaca(dados.placa); fecharModal(); toast('Veículo atualizado'); return;
+      if (dados.km !== +v.km) dados.kmData = D.hoje();
+      for (const k of ['placa', 'chassi', 'combustivel', 'categoria', 'uf', 'motorNum']) if (dados[k]) dados[k] = dados[k].toUpperCase();
+      if (ui.livro.cor) dados.cor = ui.livro.cor;
+      ui.livro.cor = null; ui.livro.editando = false;
+      D.atualizarVeiculo(dados); carro.setPlaca(dados.placa); toast('Veículo atualizado'); return;
     }
     case 'lembretes': return modalLembretes();
-    case 'historico-geral': return modalGeral();
     case 'salvar-lembretes':
       document.querySelectorAll('[data-lkm]').forEach(i => D.ajustarLembrete(i.dataset.lkm, +i.value || null, +$(`[data-lmes="${i.dataset.lkm}"]`).value || null));
       toast('Intervalos salvos'); return modalLembretes();
-    case 'zonas': return modalZonas();
-    case 'menu': return modalMenu();
-    case 'catalogo': return modalCatalogo();
-    case 'pinos': ui.pinos = !ui.pinos; $('#pinos').hidden = !ui.pinos; return fecharModal();
+    case 'catalogo': fecharMenus(); return modalCatalogo();
     case 'exportar': baixar(D.exportarJSON(), `lancer-garagem-backup-${D.hoje()}.json`); return toast('Backup gerado');
     case 'exportar-csv': return baixar(D.exportarCSV(), `lancer-historico-${D.hoje()}.csv`);
     case 'importar': {
       const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json,application/json';
       inp.onchange = async () => {
-        try { const txt = await inp.files[0].text(); if (!confirm('Substituir os dados atuais pelos do backup?')) return; D.importarJSON(txt); carro.setCor(D.getEstado().veiculo.cor); carro.setPlaca(D.getEstado().veiculo.placa); fecharModal(); toast('Backup restaurado'); }
+        try { const txt = await inp.files[0].text(); if (!confirm('Substituir os dados atuais pelos do backup?')) return; D.importarJSON(txt); carro.setCor(D.getEstado().veiculo.cor); carro.setPlaca(D.getEstado().veiculo.placa); aplicarTema(); $('#pinos').hidden = !cfg().pinos; fecharModal(); toast('Backup restaurado'); }
         catch (err) { toast(err.message); }
       };
       return inp.click();
     }
   }
+}
+// filtros de despesas (selects do livro)
+function onTroca(e) {
+  const k = e.target.dataset.desp;
+  if (!k) return;
+  ui.livro.desp[k] = e.target.value; ui.livro.pag = 0; renderLivrete();
 }
 
 iniciar();

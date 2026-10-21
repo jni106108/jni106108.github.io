@@ -28,18 +28,33 @@ export function pecasDoGrupo(gid) {
 
 // ── Estado do usuário ───────────────────────────────────────
 const padrao = () => ({
-  veiculo: { apelido: 'Meu Lancer GT', placa: '', chassi: '', anoModelo: '', producao: '', km: 0, kmData: hoje(), cor: '#8d9399' },
+  veiculo: {
+    apelido: 'Meu Lancer GT', placa: '', chassi: '', anoFab: '', anoModelo: '', producao: '', km: 0, kmData: hoje(), cor: '#8d9399',
+    // campos do documento (CRLV), digitados pelo usuário
+    renavam: '', proprietario: '', municipio: '', uf: '', combustivel: 'GASOLINA', motorNum: '', categoria: 'PARTICULAR', exercicio: '',
+  },
   registros: [],
   lembretes: {}, // overrides { id: { km, meses } }
+  config: { tema: 'sistema', documento: 'branco', pinos: true },   // tema: sistema | claro | escuro
 });
 
 let estado = padrao();
 const ouvintes = new Set();
 
+// Junta o salvo com o padrão (campos novos de versões mais recentes do app ganham o valor padrão)
+function completar(d) {
+  const p = padrao();
+  const e = { ...p, ...d, veiculo: { ...p.veiculo, ...d.veiculo }, config: { ...p.config, ...d.config } };
+  // versões antigas guardavam "2012/2013" em anoModelo
+  const m = String(e.veiculo.anoModelo || '').match(/^(\d{4})\s*\/\s*(\d{4})$/);
+  if (m && !e.veiculo.anoFab) { e.veiculo.anoFab = m[1]; e.veiculo.anoModelo = m[2]; }
+  return e;
+}
+
 export function carregarEstado() {
   try {
     const raw = localStorage.getItem(CHAVE);
-    if (raw) estado = Object.assign(padrao(), JSON.parse(raw));
+    if (raw) estado = completar(JSON.parse(raw));
   } catch { /* armazenamento indisponível: segue em memória */ }
   return estado;
 }
@@ -52,6 +67,10 @@ export const getEstado = () => estado;
 
 export function atualizarVeiculo(campos) {
   Object.assign(estado.veiculo, campos);
+  salvar();
+}
+export function atualizarConfig(campos) {
+  Object.assign(estado.config, campos);
   salvar();
 }
 
@@ -111,7 +130,7 @@ export function exportarJSON() {
 export function importarJSON(texto) {
   const d = JSON.parse(texto);
   if (!d || !Array.isArray(d.registros)) throw new Error('Arquivo não parece um backup do Lancer Garagem.');
-  estado = Object.assign(padrao(), { veiculo: d.veiculo, registros: d.registros, lembretes: d.lembretes || {} });
+  estado = completar({ veiculo: d.veiculo, registros: d.registros, lembretes: d.lembretes || {}, config: d.config || estado.config });
   salvar();
 }
 export function exportarCSV() {

@@ -229,24 +229,33 @@ export const ZONAS = [
     videos: [['Filtro de cabine Lancer', 'lancer filtro ar condicionado cabine troca'], ['Higienização do ar-condicionado', 'higienização ar condicionado carro']] },
 ];
 
-// Camada de cada zona (marcação oculta). Ela decide o modo de visualização: clicar numa peça
-// mecânica (ex.: roda) passa o switch para "Mecânica" automaticamente. Base para o futuro filtro de camadas.
-export const CAMADAS = {
-  carroceria: { nome: 'Carroceria', modo: 'ext' },
-  perifericos: { nome: 'Periféricos', modo: 'ext' },
-  mecanica: { nome: 'Mecânica', modo: 'int' },
-  eletrica: { nome: 'Elétrica', modo: 'int' },
-  interior: { nome: 'Interior', modo: 'int' },
-};
-const CAMADA_DA_ZONA = {
-  capo: 'carroceria', parachoque_d: 'carroceria', paralamas: 'carroceria', porta_d: 'carroceria', porta_t: 'carroceria',
-  teto: 'carroceria', porta_malas: 'carroceria', parachoque_t: 'carroceria', lateral_t: 'carroceria',
-  farois: 'perifericos', lanternas: 'perifericos', retrovisores: 'perifericos', parabrisa: 'perifericos', vidro_t: 'perifericos',
-  rodas: 'mecanica', motor: 'mecanica', admissao: 'mecanica', arrefecimento: 'mecanica', transmissao: 'mecanica', escapamento: 'mecanica',
-  tanque: 'mecanica', susp_d: 'mecanica', susp_t: 'mecanica', freios: 'mecanica', direcao: 'mecanica', climatizacao: 'mecanica',
-  eletrica: 'eletrica', painel: 'interior', bancos: 'interior',
-};
-for (const z of ZONAS) { z.camada = CAMADA_DA_ZONA[z.id]; z.modo = CAMADAS[z.camada].modo; }
+// Filtro de camadas (botão no canto inferior esquerdo). Cada zona pode ter várias marcações (ex.: freios está
+// em "Mecânica" e em "Freios"). As zonas do filtro ficam sólidas; o resto, translúcido.
+// regioes = qual lista do menu deslizante o filtro usa (ext = vistas de fora, int = mecânica com a carroceria fantasma).
+const MECANICA = ['motor', 'admissao', 'arrefecimento', 'climatizacao', 'escapamento', 'tanque', 'transmissao', 'susp_d', 'susp_t', 'rodas', 'freios', 'direcao'];
+export const FILTROS = [
+  { id: 'geral', nome: 'Geral', sub: 'sem filtro', regioes: 'ext', zonas: null },
+  { id: 'carroceria', nome: 'Carroceria', sub: 'painéis, portas, para-choques', regioes: 'ext',
+    zonas: ['capo', 'parachoque_d', 'paralamas', 'porta_d', 'porta_t', 'teto', 'porta_malas', 'parachoque_t', 'lateral_t', 'retrovisores'] },
+  { id: 'vidros', nome: 'Vidros e luzes', sub: 'faróis, lanternas, vidros', regioes: 'ext',
+    zonas: ['farois', 'lanternas', 'parabrisa', 'vidro_t', 'retrovisores'] },
+  { id: 'mecanica', nome: 'Mecânica', sub: 'tudo sob a carroceria', regioes: 'int', zonas: MECANICA },
+  { id: 'motor', nome: 'Motor', sub: 'motor, admissão, arrefecimento, escape', regioes: 'int',
+    zonas: ['motor', 'admissao', 'arrefecimento', 'climatizacao', 'escapamento', 'tanque'] },
+  { id: 'transmissao', nome: 'Transmissão', sub: 'embreagem, câmbio, semieixos', regioes: 'int', zonas: ['transmissao'] },
+  { id: 'suspensao', nome: 'Suspensão', sub: 'suspensões, rodas e pneus', regioes: 'int', zonas: ['susp_d', 'susp_t', 'rodas'] },
+  { id: 'freios', nome: 'Freios', sub: 'discos, pinças, ABS', regioes: 'int', zonas: ['freios'] },
+  { id: 'direcao', nome: 'Direção', sub: 'caixa, coluna, bomba', regioes: 'int', zonas: ['direcao'] },
+  { id: 'eletrica', nome: 'Elétrica', sub: 'bateria, alternador, luzes', regioes: 'int', zonas: ['eletrica', 'farois', 'lanternas'] },
+  { id: 'interior', nome: 'Interior', sub: 'painel, console, bancos', regioes: 'int', zonas: ['painel', 'bancos'] },
+];
+export const FILTRO_POR_ID = Object.fromEntries(FILTROS.map(f => [f.id, f]));
+// Marcações de cada zona; `filtro` = a mais específica (menos zonas), usada quando se clica numa peça fora do filtro atual
+for (const z of ZONAS) {
+  z.filtros = FILTROS.filter(f => f.zonas?.includes(z.id)).map(f => f.id);
+  z.filtro = z.filtros.reduce((a, b) => (FILTRO_POR_ID[b].zonas.length < FILTRO_POR_ID[a].zonas.length ? b : a));
+  z.externa = z.filtros.includes('carroceria') || z.filtros.includes('vidros');
+}
 
 export const ZONA_POR_ID = Object.fromEntries(ZONAS.map(z => [z.id, z]));
 
