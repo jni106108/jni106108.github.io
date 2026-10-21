@@ -26,7 +26,11 @@ const ICO = {
   doc: '<svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2"/><circle cx="8.5" cy="11" r="2"/><path d="M5.5 16c.6-1.4 1.6-2 3-2s2.4.6 3 2M14 9.5h4M14 12.5h4M14 15.5h2.5"/></svg>',
   hodometro: '<svg viewBox="0 0 24 24"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l4-5"/><path d="M7 21h10"/></svg>',
   seta: '<svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>',
+  lapis: '<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>',
+  lixo: '<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>',
+  olho: '<svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
 };
+const UFS = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
 // Ícones dos filtros de camadas (simples e característicos de cada sistema)
 const FICO = {
   geral: '<svg viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 12.5l9 5 9-5"/><path d="M3 16.5l9 5 9-5" opacity=".5"/></svg>',
@@ -60,14 +64,14 @@ const urlManual = pagina => {
   const parte = Math.ceil(pagina / PAGINAS_POR_PARTE);
   return `docs/manual-${parte}.pdf#page=${pagina - (parte - 1) * PAGINAS_POR_PARTE}`;
 };
-const VERSAO_APP = 'v3 · filtro de camadas e livro com abas';   // aparece em Configurações (troque junto com VERSAO do sw.js)
+const VERSAO_APP = 'v4 · histórico recolhível e menu de serviço';   // aparece em Configurações (troque junto com VERSAO do sw.js)
 const TIPOS = { troca: 'Troca de peça', preventiva: 'Manutenção preventiva', reparo: 'Reparo', inspecao: 'Inspeção', outro: 'Outro' };
 const CORES = [['Prata', '#8d9399'], ['Cinza grafite', '#4a4e54'], ['Preto', '#15161a'], ['Branco', '#e9eaec'], ['Vermelho', '#9b1420'], ['Azul', '#1d3d7a']];
 
 const ui = {
   zona: null, aba: 'pecas', grupo: null, esq: 0, busca: '', buscaGlobal: false, filtro: 'geral', reg: {}, livrete: false,
   // livro de manutenção: aba aberta, página e filtros de despesas
-  livro: { aba: 'revisoes', pag: 0, editando: false, desp: { periodo: '12m', valor: 'todos', ordem: 'recentes' } },
+  livro: { aba: 'revisoes', editando: false, anos: null, desp: { periodo: '12m', valor: 'todos', ordem: 'recentes' } },
 };
 let carro;
 const cfg = () => D.getEstado().config;
@@ -108,7 +112,7 @@ async function iniciar() {
     }
     if (digitando || !$('#modal').hidden || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
     const d = e.key === 'ArrowLeft' ? -1 : 1;
-    if (ui.livrete) paginaLivro(d); else passoRegiao(d);
+    if (!ui.livrete) passoRegiao(d);
   });
   $('#carregando').classList.add('some');
   setTimeout(() => $('#carregando').remove(), 500);
@@ -460,7 +464,11 @@ function renderRegistro() {
       <label>Mão de obra (R$)<input type="number" step="0.01" inputmode="decimal" name="maoDeObra" value="${esc(r.maoDeObra)}"></label>
       <label>Oficina / loja<input name="oficina" value="${esc(r.oficina)}"></label>
       <div class="servs"><label style="background:none;padding:0;color:var(--txt2);font-weight:600;font-size:12px;width:100%">Serviços programados realizados</label>
-        ${D.lembretes().map(l => `<label><input type="checkbox" data-serv="${l.id}" ${r.servicos.includes(l.id) ? 'checked' : ''}> ${esc(l.nome)}</label>`).join('')}</div>
+        ${r.servicoFixo
+          // registro aberto a partir de um item da manutenção programada: só aquele serviço, travado
+          ? `<label class="serv-fixo"><input type="checkbox" checked disabled> ${esc(D.lembretes().find(l => l.id === r.servicoFixo)?.nome || r.servicoFixo)}</label>
+             <small class="serv-nota">Registro individual deste serviço. Para anotar vários serviços juntos, use “+ Anotar serviço”.</small>`
+          : D.lembretes().map(l => `<label><input type="checkbox" data-serv="${l.id}" ${r.servicos.includes(l.id) ? 'checked' : ''}> ${esc(l.nome)}</label>`).join('')}</div>
       <label class="cheio">Observações<textarea name="obs" placeholder="Marca usada, garantia, sintomas…">${esc(r.obs)}</textarea></label>
     </div></div>
     <div class="cx-rodape">
@@ -682,11 +690,11 @@ function mostrarRotulo(id, e, info) {
 }
 
 // ── Livrete de manutenção ─────────────────────────────────
-// Abas do livro (cada uma com a cor da orelha). O conteúdo nunca rola: o que não cabe vai para a página seguinte (‹ ›).
+// Abas do livro (cada uma com a cor da orelha). Cabeçalho e botões ficam fixos; só a lista do meio rola.
 const ABAS_LIVRO = [['veiculo', 'Veículo'], ['historico', 'Histórico'], ['revisoes', 'Revisões'], ['despesas', 'Despesas'], ['alertas', 'Alertas']];
 function abrirLivrete(aba) {
   fecharMenus(); fecharModal();
-  if (aba && aba !== ui.livro.aba) { ui.livro.aba = aba; ui.livro.pag = 0; ui.livro.editando = false; }
+  if (aba && aba !== ui.livro.aba) { ui.livro.aba = aba; ui.livro.editando = false; }
   ui.livrete = true;
   $('#rotulo').hidden = true;
   $('#livrete').hidden = false;
@@ -695,15 +703,11 @@ function abrirLivrete(aba) {
 }
 function fecharLivrete() {
   if (ui.livro.editando) cancelarEdicaoVeiculo();
+  fecharMenuRegistro();
   ui.livrete = false; $('#livrete').hidden = true; $('#livrete').innerHTML = '';
   carro.pausar(false);
 }
-function paginaLivro(d) {
-  const n = renderLivrete.paginas || 1, p = ui.livro.pag + d;
-  if (p < 0 || p >= n) return;
-  ui.livro.pag = p; renderLivrete();
-}
-window.addEventListener('resize', () => { if (ui.livrete) { clearTimeout(paginaLivro.h); paginaLivro.h = setTimeout(renderLivrete, 120); } });
+// (o livro não é redesenhado no resize: no celular o teclado redimensiona a tela e isso apagava o campo em edição)
 
 function carimbo(status) {
   return {
@@ -746,33 +750,12 @@ function despesasFiltradas() {
   return regs;
 }
 
-// Distribui os itens em páginas medindo a altura real de cada um. Item com `cab` é título de grupo
-// (ex.: o ano no histórico): não fica sozinho no fim da página e reaparece como "continuação" na página seguinte.
-function paginar(lista, itens) {
-  lista.innerHTML = itens.map(i => i.html).join('');
-  const alt = lista.clientHeight, gap = 8, hs = [...lista.children].map(c => c.offsetHeight);
-  const paginas = []; let pag = [], usado = 0, grupo = null;
-  const fecha = () => { if (pag.length) paginas.push(pag); pag = []; usado = 0; };
-  const poe = (html, h) => { usado += (pag.length ? gap : 0) + h; pag.push(html); };
-  itens.forEach((it, k) => {
-    const h = hs[k];
-    if (it.cab) {
-      const prox = hs[k + 1] || 0;
-      if (pag.length && usado + gap + h + gap + prox > alt) fecha();
-      grupo = it; poe(it.html, h); return;
-    }
-    if (pag.length && usado + gap + h > alt) {
-      fecha();
-      if (grupo?.cont) poe(grupo.cont, hs[itens.indexOf(grupo)]);
-    }
-    poe(it.html, h);
-  });
-  fecha();
-  return paginas.length ? paginas : [[]];
-}
 function renderLivrete() {
   const L = ui.livro, aba = L.aba, nAl = alertas().length;
+  fecharMenuRegistro();
+  const ant = $('#livrete .l-corpo'), rolagem = ant?.dataset.aba === aba ? ant.scrollTop : 0;   // mantém a posição ao redesenhar a mesma aba
   const c = conteudoLivro[aba]();
+  const corpo = c.itens ? (c.itens.length ? c.itens.join('') : c.vazio) : c.corpo;
   $('#livrete').innerHTML = `
   <div class="caderno aba-${aba}" role="dialog" aria-modal="true" aria-label="Livro de manutenção">
     <nav class="l-abas" role="tablist">${ABAS_LIVRO.map(([k, t]) => `<button role="tab" aria-selected="${k === aba}" class="l-aba ab-${k} ${k === aba ? 'ativo' : ''}" data-livro="${k}">${t}${k === 'alertas' && nAl ? `<span class="badge">${nAl}</span>` : ''}</button>`).join('')}</nav>
@@ -781,34 +764,57 @@ function renderLivrete() {
       <button class="fechar-l" data-acao="fechar-livrete" title="Fechar">${ICO.x}</button>
       <header class="l-cab"><div class="l-tit"><h1>${c.titulo}</h1><p class="sub">${c.sub || ''}</p></div>${c.ferramentas || ''}</header>
       ${c.topo || ''}
-      <div class="l-corpo ${c.itens ? '' : 'livre'}">
-        ${c.itens ? `<button class="l-pag" data-lpag="-1" aria-label="Página anterior">${ICO.voltar}</button>` : ''}
-        <div class="l-lista" data-lista>${c.itens ? '' : c.corpo}</div>
-        ${c.itens ? `<button class="l-pag" data-lpag="1" aria-label="Próxima página"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>` : ''}
-      </div>
-      <footer class="l-rod"><span class="l-num" data-num></span><div class="l-acoes">${c.acoes || ''}</div></footer>
+      <div class="l-corpo" data-aba="${aba}"><div class="l-lista">${corpo}</div></div>
+      <footer class="l-rod"><div class="l-acoes">${c.acoes || ''}</div></footer>
     </div>
   </div>`;
-  renderLivrete.paginas = 1;
-  if (!c.itens) return;
-  const lista = $('[data-lista]');
-  if (!c.itens.length) { lista.innerHTML = c.vazio; lista.parentElement.classList.add('livre'); document.querySelectorAll('.l-pag').forEach(b => b.hidden = true); return; }
-  const paginas = paginar(lista, c.itens);
-  renderLivrete.paginas = paginas.length;
-  L.pag = Math.min(L.pag, paginas.length - 1);
-  lista.innerHTML = paginas[L.pag].join('');
-  lista.classList.remove('vira'); void lista.offsetWidth; lista.classList.add('vira');
-  const [ant, prox] = document.querySelectorAll('.l-pag');
-  ant.disabled = L.pag === 0; prox.disabled = L.pag === paginas.length - 1;
-  ant.hidden = prox.hidden = paginas.length < 2;
-  $('[data-num]').innerHTML = paginas.length > 1 ? paginas.map((_, i) => `<i class="${i === L.pag ? 'on' : ''}"></i>`).join('') + `<span>${L.pag + 1} / ${paginas.length}</span>` : '';
-  arrastarPagina(lista);
+  $('#livrete .l-corpo').scrollTop = rolagem;
 }
-// deslizar o dedo sobre a página vira a folha
-function arrastarPagina(el) {
-  let x0 = null;
-  el.onpointerdown = e => { x0 = e.clientX; };
-  el.onpointerup = e => { if (x0 === null) return; const dx = e.clientX - x0; x0 = null; if (Math.abs(dx) > 50) { paginaLivro(dx < 0 ? 1 : -1); } };
+
+// Menu suspenso de uma manutenção do histórico/despesas: ver mais, editar, excluir
+function abrirMenuRegistro(id, el) {
+  const aberto = $('#menu-reg');
+  fecharMenuRegistro();
+  if (aberto?.dataset.id === id) return;   // segundo toque no mesmo item fecha
+  const r = D.getEstado().registros.find(x => x.id === id); if (!r) return;
+  const m = document.createElement('div');
+  m.id = 'menu-reg'; m.className = 'menu-reg'; m.dataset.id = id; m.setAttribute('role', 'menu');
+  m.innerHTML = `<button role="menuitem" data-acao="ver-reg" data-id="${id}">${ICO.olho}<span>Ver mais</span></button>
+    <button role="menuitem" data-editar="${id}">${ICO.lapis}<span>Editar</span></button>
+    <button role="menuitem" class="perigo" data-acao="excluir-reg" data-id="${id}">${ICO.lixo}<span>Excluir</span></button>`;
+  document.body.appendChild(m);
+  el.classList.add('com-menu');
+  const b = el.getBoundingClientRect(), h = m.offsetHeight;
+  m.style.left = Math.max(8, Math.min(b.right - m.offsetWidth - 8, window.innerWidth - m.offsetWidth - 8)) + 'px';
+  m.style.top = (b.bottom + h + 8 > window.innerHeight ? b.top - h - 4 : b.bottom + 4) + 'px';
+}
+function fecharMenuRegistro() {
+  $('#menu-reg')?.remove();
+  document.querySelectorAll('.com-menu').forEach(e => e.classList.remove('com-menu'));
+}
+function modalDetalheRegistro(r) {
+  abrirModal(`${cab(esc(r.titulo || TIPOS[r.tipo]))}
+    <div class="cx-corpo detalhe-peca">
+      <dl>
+        <dt>Data</dt><dd>${D.dataBR(r.data)}</dd>
+        <dt>Quilometragem</dt><dd>${D.km(r.km)}</dd>
+        <dt>Tipo</dt><dd>${esc(TIPOS[r.tipo] || '—')}</dd>
+        <dt>Zona do carro</dt><dd>${esc(ZONA_POR_ID[r.zona]?.nome || '—')}</dd>
+        ${r.oficina ? `<dt>Oficina / loja</dt><dd>${esc(r.oficina)}</dd>` : ''}
+        ${(r.servicos || []).length ? `<dt>Serviços programados</dt><dd>${r.servicos.map(s => esc(D.lembretes().find(l => l.id === s)?.nome || s)).join(', ')}</dd>` : ''}
+      </dl>
+      <div class="secao">Peças e valores</div>
+      ${(r.pecas || []).length || +r.maoDeObra ? `<div class="reg" style="margin-top:0"><ul style="margin:0">${(r.pecas || []).map(p => `<li><span><span class="mono">${esc(p.oem || '—')}</span> ${esc(p.desc || '')} ×${p.qtd || 1}</span><span>${D.brl((+p.preco || 0) * (+p.qtd || 1))}</span></li>`).join('')}
+        ${+r.maoDeObra ? `<li><span>Mão de obra</span><span>${D.brl(r.maoDeObra)}</span></li>` : ''}<li><b>Total</b><b>${D.brl(D.totalRegistro(r))}</b></li></ul></div>` : '<div class="p-sub">Sem peças ou valores anotados.</div>'}
+      ${r.obs ? `<div class="secao">Observações</div><div class="p-sub" style="white-space:pre-wrap;color:var(--txt)">${esc(r.obs)}</div>` : ''}
+    </div>
+    <div class="cx-rodape"><button class="btn perigo" data-acao="excluir-reg" data-id="${r.id}" style="margin-right:auto">Excluir</button><button class="btn" data-acao="fechar-modal">Fechar</button><button class="btn pri" data-editar="${r.id}">Editar</button></div>`);
+}
+// Balão temporário sobre um campo (ex.: data da leitura do hodômetro)
+function mostrarBalao(el, texto) {
+  el.querySelector('.balao')?.remove();
+  const b = document.createElement('span'); b.className = 'balao'; b.textContent = texto; el.appendChild(b);
+  clearTimeout(mostrarBalao.h); mostrarBalao.h = setTimeout(() => b.remove(), 2600);
 }
 
 const conteudoLivro = {
@@ -818,25 +824,27 @@ const conteudoLivro = {
     const ok = ls.filter(l => l.status === 'ok').length;
     return {
       titulo: 'Revisões', sub: `Manutenção programada do manual · ${ok} de ${ls.length} em dia · toque para registrar`,
-      itens: ls.map(l => ({ html: cartaoLembrete(l) })),
+      itens: ls.map(l => cartaoLembrete(l)),
       acoes: `<button data-acao="lembretes">Ajustar intervalos</button><button class="pri" data-acao="novo-registro">+ Anotar serviço</button>`,
     };
   },
   historico() {
     const regs = D.registrosOrdenados(), anos = {};
     for (const r of regs) (anos[(r.data || '????').slice(0, 4)] ||= []).push(r);
-    const itens = [];
-    for (const [ano, rs] of Object.entries(anos).sort((a, b) => b[0].localeCompare(a[0]))) {
-      const tot = rs.reduce((s, r) => s + D.totalRegistro(r), 0);
-      const cab = cont => `<div class="l-ano"><b>${ano}</b><span>${cont ? 'continuação' : `${rs.length} serviço${rs.length > 1 ? 's' : ''} · ${D.brl(tot)}`}</span></div>`;
-      itens.push({ cab: true, html: cab(false), cont: cab(true) });
-      rs.forEach((r, i) => itens.push({ html: `<button class="l-evento ${i === rs.length - 1 ? 'ultimo' : ''}" data-editar="${r.id}">
+    const itens = [], lista = Object.entries(anos).sort((a, b) => b[0].localeCompare(a[0]));
+    ui.livro.anos ||= new Set(lista.slice(0, 1).map(([a]) => a));   // começa só com o ano mais recente aberto
+    for (const [ano, rs] of lista) {
+      const tot = rs.reduce((s, r) => s + D.totalRegistro(r), 0), aberto = ui.livro.anos.has(ano);
+      // o selo do ano abre/fecha os serviços daquele ano; contagem e total ficam sempre à vista
+      itens.push(`<button class="l-ano ${aberto ? 'aberto' : ''}" data-ano="${ano}" aria-expanded="${aberto}"><b>${ano}</b>
+        <span>${rs.length} serviço${rs.length > 1 ? 's' : ''} · ${D.brl(tot)}</span>${ICO.seta}</button>`);
+      if (aberto) rs.forEach((r, i) => itens.push(`<button class="l-evento ${i === rs.length - 1 ? 'ultimo' : ''}" data-reg="${r.id}" aria-haspopup="menu">
         <span class="l-data">${D.dataBR(r.data).slice(0, 5)}</span>
         <span class="l-txt"><b>${esc(r.titulo || TIPOS[r.tipo])}</b><small>${esc(ZONA_POR_ID[r.zona]?.nome || '')} · ${D.km(r.km)}${r.oficina ? ' · ' + esc(r.oficina) : ''}</small></span>
-        <span class="l-valor">${D.brl(D.totalRegistro(r))}</span></button>` }));
+        <span class="l-valor">${D.brl(D.totalRegistro(r))}</span></button>`));
     }
     return {
-      titulo: 'Histórico', sub: regs.length ? `Linha do tempo por ano · ${regs.length} serviço${regs.length > 1 ? 's' : ''} · toque para ver ou corrigir` : 'Linha do tempo por ano',
+      titulo: 'Histórico', sub: regs.length ? `${regs.length} serviço${regs.length > 1 ? 's' : ''} · toque no ano para abrir ou fechar · toque num serviço para ver, editar ou excluir` : 'Linha do tempo por ano',
       itens, vazio: '<div class="mao-vazio">Nenhum serviço anotado ainda.<br>Comece pela última troca de óleo!</div>',
       acoes: `<button class="pri" data-acao="novo-registro">+ Anotar serviço</button>`,
     };
@@ -855,10 +863,10 @@ const conteudoLivro = {
         <div><b>${D.brl(total)}</b><small>${regs.length} serviço${regs.length === 1 ? '' : 's'}</small></div>
         <div><b>${rodado ? D.brl(total / rodado) : '—'}</b><small>custo por km</small></div>
         <div class="l-barra"><span><i style="width:${pct}%"></i></span><small>peças ${D.brl(pecas)} · mão de obra ${D.brl(mao)}</small></div></div>`,
-      itens: regs.map(r => ({ html: `<button class="l-desp" data-editar="${r.id}">
+      itens: regs.map(r => `<button class="l-desp" data-reg="${r.id}" aria-haspopup="menu">
         <span class="l-data">${D.dataBR(r.data)}</span>
         <span class="l-txt"><b>${esc(r.titulo || TIPOS[r.tipo])}</b><small>${esc(ZONA_POR_ID[r.zona]?.nome || '')} · ${esc(TIPOS[r.tipo] || '')}</small></span>
-        <b class="l-valor">${D.brl(D.totalRegistro(r))}</b></button>` })),
+        <b class="l-valor">${D.brl(D.totalRegistro(r))}</b></button>`),
       vazio: `<div class="mao-vazio">Nenhuma despesa ${D.getEstado().registros.length ? 'com estes filtros' : 'anotada ainda'}.</div>`,
       acoes: D.getEstado().registros.length ? `<button data-acao="exportar-csv">Exportar planilha</button>` : '',
     };
@@ -868,10 +876,10 @@ const conteudoLivro = {
     return {
       titulo: 'Alertas', sub: al.length ? 'O que precisa de atenção agora · toque para resolver' : 'Nada pendente',
       itens: al.map(l => l.id === 'km'
-        ? { html: `<button class="l-card st-borda-proximo" data-acao="atualizar-km"><span class="l-ico">${ICO.hodometro}</span>
+        ? `<button class="l-card st-borda-proximo" data-acao="atualizar-km"><span class="l-ico">${ICO.hodometro}</span>
             <span class="l-txt"><b>${esc(l.nome)}</b><small>Última leitura há ${l.dias > 900 ? 'muito tempo' : l.dias + ' dias'} (${D.km(D.getEstado().veiculo.km)}) · toque para atualizar</small></span>
-            <span class="carimbo proximo"><b>Atualizar</b></span></button>` }
-        : { html: cartaoLembrete(l, l.status === 'sem-registro' ? 'Registre a última vez que foi feito para calcular a próxima' : textoLembrete(l).replace(l.nome + ': ', '')) }),
+            <span class="carimbo proximo"><b>Atualizar</b></span></button>`
+        : cartaoLembrete(l, l.status === 'sem-registro' ? 'Registre a última vez que foi feito para calcular a próxima' : textoLembrete(l).replace(l.nome + ': ', ''))),
       vazio: '<div class="tudo-ok"><span class="carimbo ok grande"><b>Tudo em dia</b><small>OK</small></span><p>Nenhuma manutenção vencida ou próxima.</p></div>',
       acoes: `<button data-acao="atualizar-km">Atualizar km</button>`,
     };
@@ -879,9 +887,15 @@ const conteudoLivro = {
   veiculo() {
     const v = D.getEstado().veiculo, ed = ui.livro.editando, estilo = cfg().documento;
     const corNome = (CORES.find(([, c]) => c === (ui.livro.cor || v.cor)) || ['—'])[0];
-    const campo = (rot, nome, { cls = '', valor, ph = '', tipo = 'text' } = {}) => `<div class="d-campo ${cls}"><label>${rot}</label>${
-      ed && nome ? `<input name="${nome}" type="${tipo}" value="${esc(v[nome] ?? '')}" placeholder="${ph}" ${tipo === 'number' ? 'inputmode="numeric"' : ''}>`
-        : `<span>${esc(valor ?? (v[nome] || '—'))}</span>`}</div>`;
+    // opcoes = lista de seleção (ex.: UF); balao = texto mostrado ao tocar no campo fora da edição
+    const campo = (rot, nome, { cls = '', valor, ph = '', tipo = 'text', opcoes, balao } = {}) => {
+      if (ed && nome) {
+        const ctl = opcoes ? `<select name="${nome}"><option value="">—</option>${opcoes.map(o => `<option ${o === v[nome] ? 'selected' : ''}>${o}</option>`).join('')}</select>`
+          : `<input name="${nome}" type="${tipo}" value="${esc(v[nome] ?? '')}" placeholder="${ph}" autocomplete="off" ${tipo === 'number' ? 'inputmode="numeric"' : ''}>`;
+        return `<label class="d-campo ${cls}"><span class="d-rot">${rot}</span>${ctl}</label>`;
+      }
+      return `<div class="d-campo ${cls}" ${balao ? `data-balao="${esc(balao)}" role="button" tabindex="0"` : ''}><span class="d-rot">${rot}</span><span class="d-val">${esc(valor ?? (v[nome] || '—'))}</span></div>`;
+    };
     return {
       titulo: 'Veículo', sub: `${VEICULO_BASE.modelo} · ${VEICULO_BASE.versao}`,
       ferramentas: `<div class="seg cfg-seg l-estilo">${[['branco', 'Branco'], ['verde', 'Verde']].map(([k, t]) => `<button data-cfg="documento:${k}" class="${estilo === k ? 'ativo' : ''}">${t}</button>`).join('')}</div>`,
@@ -903,13 +917,13 @@ const conteudoLivro = {
           ${campo('Potência / Cilindrada', null, { valor: '160CV / 1998' })}
           ${campo('Nº do motor', 'motorNum', { cls: 'mono' })}
           ${campo('Local', 'municipio', { cls: 'largo', ph: 'Município' })}
-          ${campo('UF', 'uf', { ph: 'UF' })}
+          ${campo('UF', 'uf', { opcoes: UFS })}
         </div>
         <div class="d-app">
           ${campo('Apelido no app', 'apelido')}
-          ${campo('Hodômetro', 'km', { tipo: 'number', valor: D.km(v.km) + (v.kmData ? ' em ' + D.dataBR(v.kmData) : '') })}
+          ${campo('Hodômetro', 'km', { tipo: 'number', valor: D.km(v.km), cls: 'com-balao', balao: v.kmData ? 'Atualizado em ' + D.dataBR(v.kmData) : 'Data da leitura não informada' })}
           ${campo('Produção (aaaa.mm)', 'producao', { ph: '2012.05', valor: v.producao || '—' })}
-          <div class="d-campo"><label>Cor no 3D</label><div class="cores">${CORES.map(([n, c]) => `<button type="button" title="${n}" ${ed ? `data-cor="${c}"` : 'disabled'} class="${(ui.livro.cor || v.cor) === c ? 'ativo' : ''}" style="background:${c}"></button>`).join('')}</div></div>
+          <div class="d-campo"><span class="d-rot">Cor no 3D</span><div class="cores">${CORES.map(([n, c]) => `<button type="button" title="${n}" ${ed ? `data-cor="${c}"` : 'disabled'} class="${(ui.livro.cor || v.cor) === c ? 'ativo' : ''}" style="background:${c}"></button>`).join('')}</div></div>
         </div>
       </div>`,
       acoes: ed ? `<button data-acao="cancelar-veiculo">Cancelar</button><button class="pri" data-acao="salvar-veiculo">Salvar</button>`
@@ -940,7 +954,8 @@ function irParaGrupo(gid) {
 function onClique(e) {
   // clique fora dos menus suspensos fecha-os
   if (!e.target.closest('#veic') && !e.target.closest('#filtro') && menuAberto()) fecharMenus();
-  const t = e.target.closest('[data-passo],[data-acao],[data-aba],[data-grupo],[data-esq],[data-peca],[data-filtro],[data-livro],[data-lpag],[data-cfg],[data-pino],[data-zona],[data-editar],[data-trocar],[data-servico],[data-copiar],[data-rmpeca],[data-sugpeca],[data-cor],[data-sec]');
+  if ($('#menu-reg') && !e.target.closest('#menu-reg') && !e.target.closest('[data-reg]')) fecharMenuRegistro();
+  const t = e.target.closest('[data-passo],[data-acao],[data-aba],[data-grupo],[data-esq],[data-peca],[data-filtro],[data-livro],[data-reg],[data-ano],[data-balao],[data-cfg],[data-pino],[data-zona],[data-editar],[data-trocar],[data-servico],[data-copiar],[data-rmpeca],[data-sugpeca],[data-cor],[data-sec]');
   if (!t) {
     if (e.target.id === 'modal') fecharModal();
     else if (e.target.id === 'livrete') fecharLivrete();   // toque fora do caderno
@@ -950,7 +965,9 @@ function onClique(e) {
   if (ds.passo) return passoRegiao(+ds.passo);
   if (ds.filtro) return setFiltro(ds.filtro);
   if (ds.livro) { if (ui.livro.editando) cancelarEdicaoVeiculo(); return abrirLivrete(ds.livro); }
-  if (ds.lpag) return paginaLivro(+ds.lpag);
+  if (ds.reg) return abrirMenuRegistro(ds.reg, t);
+  if (ds.ano) { const a = ui.livro.anos; a.has(ds.ano) ? a.delete(ds.ano) : a.add(ds.ano); return renderLivrete(); }
+  if (ds.balao) return mostrarBalao(t, ds.balao);
   if (ds.cfg) {
     const [k, v] = ds.cfg.split(':'), val = v === 'true' ? true : v === 'false' ? false : v;
     D.atualizarConfig({ [k]: val });
@@ -965,7 +982,7 @@ function onClique(e) {
   if (ds.grupo) { e.preventDefault(); return irParaGrupo(ds.grupo); }
   if (ds.esq) { ui.esq = +ds.esq; return renderPainel(); }
   if (ds.peca) { const [g, n, oem, ref] = JSON.parse(decodeURIComponent(ds.peca)); return modalPeca(g, n, oem, ref); }
-  if (ds.editar) { const r = D.getEstado().registros.find(x => x.id === ds.editar); return r && modalRegistro(r); }
+  if (ds.editar) { fecharMenuRegistro(); const r = D.getEstado().registros.find(x => x.id === ds.editar); return r && modalRegistro(r); }
   if (ds.trocar) {
     const p = JSON.parse(decodeURIComponent(ds.trocar));
     modalRegistro(); rascunho.zona = zonaDoGrupo(p.grupo)?.id || ui.zona; rascunho.titulo = 'Troca: ' + p.desc;
@@ -973,7 +990,7 @@ function onClique(e) {
   }
   if (ds.servico) {
     const l = D.lembretes().find(x => x.id === ds.servico);
-    modalRegistro(); rascunho.tipo = 'preventiva'; rascunho.zona = l.zona; rascunho.titulo = l.nome; rascunho.servicos = [l.id]; return renderRegistro();
+    modalRegistro(); rascunho.tipo = 'preventiva'; rascunho.zona = l.zona; rascunho.titulo = l.nome; rascunho.servicos = [l.id]; rascunho.servicoFixo = l.id; return renderRegistro();
   }
   if (ds.copiar) { navigator.clipboard?.writeText(ds.copiar).then(() => toast('Nº OEM copiado'), () => toast(ds.copiar)); return; }
   if (ds.rmpeca) { rascunho.pecas.splice(+ds.rmpeca, 1); return renderRegistro(); }
@@ -991,6 +1008,13 @@ function onClique(e) {
     case 'editar-veiculo': ui.livro.editando = true; return renderLivrete();
     case 'cancelar-veiculo': cancelarEdicaoVeiculo(); return renderLivrete();
     case 'atualizar-km': return modalKm();
+    case 'ver-reg': { fecharMenuRegistro(); const r = D.getEstado().registros.find(x => x.id === ds.id); return r && modalDetalheRegistro(r); }
+    case 'excluir-reg': {
+      fecharMenuRegistro();
+      const r = D.getEstado().registros.find(x => x.id === ds.id); if (!r) return;
+      if (!confirm(`Excluir “${r.titulo || TIPOS[r.tipo]}” de ${D.dataBR(r.data)}? Esta ação não pode ser desfeita.`)) return;
+      D.excluirRegistro(r.id); fecharModal(); return toast('Registro excluído');
+    }
     case 'salvar-km': {
       const f = $('[data-km]'), km = +f.querySelector('[name=km]').value;
       if (!km) return toast('Informe a quilometragem');
@@ -1004,6 +1028,8 @@ function onClique(e) {
       if (!rascunho.data) return toast('Informe a data');
       if (!rascunho.titulo) rascunho.titulo = rascunho.pecas[0]?.desc ? 'Troca: ' + rascunho.pecas[0].desc : TIPOS[rascunho.tipo];
       rascunho.pecas = rascunho.pecas.filter(p => p.oem || p.desc);
+      if (rascunho.servicoFixo) rascunho.servicos = [rascunho.servicoFixo];
+      delete rascunho.servicoFixo;
       D.salvarRegistro(rascunho); fecharModal(); toast('Registro salvo');
       if (ui.zona === rascunho.zona) { ui.aba = 'historico'; renderPainel(); }
       return;
@@ -1013,7 +1039,7 @@ function onClique(e) {
       return;
     case 'salvar-veiculo': {
       const dados = {}, v = D.getEstado().veiculo;
-      $('[data-doc]').querySelectorAll('input[name]').forEach(i => { dados[i.name] = i.type === 'number' ? +i.value || 0 : i.value.trim(); });
+      $('[data-doc]').querySelectorAll('input[name], select[name]').forEach(i => { dados[i.name] = i.type === 'number' ? +i.value || 0 : i.value.trim(); });
       if (dados.producao && !/^\d{4}\.\d{2}$/.test(dados.producao)) return toast('Data de produção no formato aaaa.mm');
       if (dados.km !== +v.km) dados.kmData = D.hoje();
       for (const k of ['placa', 'chassi', 'combustivel', 'categoria', 'uf', 'motorNum']) if (dados[k]) dados[k] = dados[k].toUpperCase();
@@ -1042,7 +1068,7 @@ function onClique(e) {
 function onTroca(e) {
   const k = e.target.dataset.desp;
   if (!k) return;
-  ui.livro.desp[k] = e.target.value; ui.livro.pag = 0; renderLivrete();
+  ui.livro.desp[k] = e.target.value; renderLivrete();
 }
 
 iniciar();
