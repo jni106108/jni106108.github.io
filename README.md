@@ -34,10 +34,17 @@ Nenhum arquivo desta pasta passa de 25 MB (o maior é `modelo/lancer.glb`, com 1
 - **Aba Peças**: os 122 grupos e 194 diagramas do catálogo EPC. Zoom e arrasto no diagrama, tabela com nº OEM, supersessão, período, quantidade e preço de referência. Busca por nome, OEM ou referência.
 - **Aba Histórico**: registro de troca/serviço com data, km, peças (OEM, quantidade, preço), mão de obra, oficina e observações.
 - **Aba Reparos**: manutenção programada (intervalos do manual), especificações, problemas conhecidos, páginas do manual (abre o PDF na página certa) e buscas de vídeo no YouTube.
-- **Livro de manutenção** com abas: Veículo (ficha no visual do CRLV verde ou branco), Histórico (linha do tempo por ano; o selo do ano abre/fecha os serviços), Revisões (carimbos de em dia / vencido / atenção), Despesas (filtros por período e valor) e Alertas. Cabeçalho e botões ficam fixos e só a lista rola.
+- **Livro de manutenção** com abas: Veículo (ficha no visual do CRLV verde ou branco), Histórico (linha do tempo por ano; o selo do ano abre/fecha os serviços), Revisões (carimbos de em dia / vencido / atenção), Despesas (manutenção e combustível, com filtros por período, categoria e valor) e Ganhos. Cabeçalho e botões ficam fixos e só a lista rola.
   - Tocar num serviço do Histórico ou de Despesas abre um menu com **Ver mais**, **Editar** e **Excluir**.
   - Tocar num item de Revisões/Alertas abre o registro **só daquele serviço** (os outros serviços programados não aparecem para marcar). Para anotar vários juntos, use “+ Anotar serviço”.
 - **Configurações** (engrenagem, canto superior direito): tema claro, escuro ou do sistema (vale para o fundo do 3D), visual do documento, pontos no carro, backup, restauração e planilha.
+
+- **Painel superior** (visual de painel de instrumentos):
+  - **Hodômetro** moderno (visor digital) ou clássico (tambores). Toque e segure nele para editar o km e trocar o estilo; o estilo também fica em Configurações.
+  - **Bomba**: registra um abastecimento numa tela com visual de bomba. Você digita o total e o preço do litro no visor, os litros são calculados, e os bicos escolhem o combustível (verde = etanol, amarelo = gasolina comum, vermelho = premium). Também dá para informar km, data e posto.
+  - **Luzes de alerta**: vermelha = vencido, âmbar = vence em breve ou km desatualizado, cinza = sem registro. Se não couberem, rolam para os lados com as setas. Tocar abre o painel de alertas.
+- **Barra inferior**: filtro, catálogo de peças, manual do proprietário e personalização (com ou sem aerofólio, cor das rodas; "mais peças" em breve).
+- **Ganhos como motorista de app** (menu do veículo): data inicial, data final e valor. A aba Ganhos do livro mostra os períodos e o saldo (ganhos − gastos com o carro).
 
 ### Navegação
 

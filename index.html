@@ -11,7 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,800&family=JetBrains+Mono:wght@500&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,800&family=JetBrains+Mono:wght@500;700&family=Share+Tech+Mono&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/app.css">
 <script>
   // aplica o tema salvo antes de desenhar a página (evita piscar claro → escuro)
@@ -31,14 +31,27 @@
   <div id="rotulo" class="rotulo" hidden></div>
 
   <header class="barra">
-    <!-- Menu do veículo: abre para baixo (livro de manutenção, dados do veículo, catálogo…) -->
-    <div class="veic" id="veic">
-      <button class="marca" data-acao="menu-veiculo" aria-expanded="false" aria-controls="veic-lista" title="Meu veículo">
-        <span class="marca-ico"><svg viewBox="0 0 24 24"><path d="M3.5 14.5l1.8-4.6a2 2 0 0 1 1.9-1.3h9.6a2 2 0 0 1 1.9 1.3l1.8 4.6"/><path d="M2.5 14.5h19v3.2h-19z"/><circle cx="7" cy="17.7" r="1.7"/><circle cx="17" cy="17.7" r="1.7"/></svg><i id="veic-alerta" hidden></i></span>
-        <span class="marca-txt"><b id="apelido">Lancer GT</b><small id="km-atual">— km</small></span>
-        <svg class="marca-seta" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+    <!-- Painel superior (como o painel de instrumentos): menu do veículo, hodômetro, abastecimento e luzes de alerta -->
+    <div class="cluster" id="cluster">
+      <div class="veic" id="veic">
+        <button class="marca" data-acao="menu-veiculo" aria-expanded="false" aria-controls="veic-lista" title="Meu veículo">
+          <span class="marca-ico"><svg viewBox="0 0 24 24"><path d="M3.5 14.5l1.8-4.6a2 2 0 0 1 1.9-1.3h9.6a2 2 0 0 1 1.9 1.3l1.8 4.6"/><path d="M2.5 14.5h19v3.2h-19z"/><circle cx="7" cy="17.7" r="1.7"/><circle cx="17" cy="17.7" r="1.7"/></svg></span>
+          <svg class="marca-seta" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="veic-lista" id="veic-lista" hidden></div>
+      </div>
+      <div class="odo-caixa" id="odo-caixa">
+        <button class="odometro" id="odometro" title="Hodômetro · toque e segure para editar"></button>
+        <div class="odo-pop" id="odo-pop" hidden></div>
+      </div>
+      <button class="bomba-btn" data-acao="abastecer" title="Registrar abastecimento">
+        <svg viewBox="0 0 24 24"><path d="M4 21V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v16"/><path d="M3 21h13M6.5 7h6v4h-6z"/><path d="M15 9h1.5a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0V8.5L18.5 5.5"/></svg>
       </button>
-      <div class="veic-lista" id="veic-lista" hidden></div>
+      <div class="luzes" id="luzes">
+        <button class="luz-seta" data-luzes="-1" aria-label="Alertas anteriores" hidden><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <div class="luzes-pista" id="luzes-pista" role="list" aria-label="Alertas de manutenção"></div>
+        <button class="luz-seta" data-luzes="1" aria-label="Próximos alertas" hidden><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+      </div>
     </div>
     <div class="barra-dir">
       <button class="ico" data-acao="config" title="Configurações">
@@ -60,14 +73,25 @@
   </nav>
   <div id="chips" class="chips"></div>
 
-  <!-- Filtro de camadas (canto inferior esquerdo): abre para cima com os sistemas do carro -->
+  <!-- Barra inferior: filtro de camadas (abre para cima), catálogo, manual e personalização -->
   <div class="filtro" id="filtro">
     <div class="filtro-lista" id="filtro-lista" role="listbox" aria-label="Filtrar sistemas" hidden></div>
-    <button class="filtro-btn" data-acao="filtro" aria-expanded="false" aria-controls="filtro-lista" title="Filtrar sistemas"></button>
+    <div class="perso-lista" id="perso-lista" hidden></div>
+    <div class="filtro-linha">
+      <button class="filtro-btn" data-acao="filtro" aria-expanded="false" aria-controls="filtro-lista" title="Filtrar sistemas"></button>
+      <button class="ico" data-acao="catalogo" title="Catálogo de peças">
+        <svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>
+      </button>
+      <a class="ico" id="link-manual" target="_blank" rel="noopener" title="Manual do proprietário">
+        <svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M9 7h6M9 10.5h6"/></svg>
+      </a>
+      <button class="ico" data-acao="personalizar" aria-expanded="false" aria-controls="perso-lista" title="Personalizar o carro">
+        <svg viewBox="0 0 24 24"><path d="M18.4 2.6a2 2 0 0 1 2.9 2.9L12 14.8 9.2 12z"/><path d="M9.2 12c-2.5 0-4.2 1.8-4.2 4.2 0 1.6-1.1 2.8-2.5 3.3 1.4 1 3.2 1.5 5 1.5 3.4 0 4.5-2.4 4.5-4.2z"/></svg>
+      </button>
+    </div>
   </div>
 
   <div id="dica" class="dica">Toque numa peça ou deslize o menu acima</div>
-  <button id="lembrete-chip" class="lembrete-chip" data-livro="alertas" hidden></button>
 
   <aside id="painel" class="painel" aria-live="polite" hidden></aside>
   <div id="livrete" class="livrete" hidden></div>
