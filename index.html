@@ -47,10 +47,9 @@
       <button class="bomba-btn" data-acao="abastecer" title="Registrar abastecimento">
         <svg viewBox="0 0 24 24"><path d="M4 21V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v16"/><path d="M3 21h13M6.5 7h6v4h-6z"/><path d="M15 9h1.5a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0V8.5L18.5 5.5"/></svg>
       </button>
+      <!-- luzes de alerta: se não couberem ao lado do hodômetro, descem para uma linha própria (o painel cresce) -->
       <div class="luzes" id="luzes">
-        <button class="luz-seta" data-luzes="-1" aria-label="Alertas anteriores" hidden><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
-        <div class="luzes-pista" id="luzes-pista" role="list" aria-label="Alertas de manutenção"></div>
-        <button class="luz-seta" data-luzes="1" aria-label="Próximos alertas" hidden><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+        <div class="luzes-pista" id="luzes-pista" role="list" aria-label="Alertas de manutenção e documentos"></div>
       </div>
     </div>
     <div class="barra-dir">
@@ -97,8 +96,52 @@
   <div id="livrete" class="livrete" hidden></div>
   <div id="modal" class="modal" hidden></div>
   <div id="toast" class="toast" hidden></div>
-  <div id="carregando" class="carregando">Carregando catálogo e modelo 3D…</div>
+  <div id="carregando" class="carregando">
+    <div class="carr-caixa">
+      <img src="icones/icone-192.png" alt="" width="64" height="64">
+      <b>Lancer Garagem</b>
+      <span id="carregando-txt">Carregando catálogo e modelo 3D…</span>
+      <div class="carr-barra"><i id="carregando-barra"></i></div>
+      <div id="carregando-erro" class="carr-erro" hidden></div>
+    </div>
+  </div>
 
+  <script>
+    // Rede de segurança da abertura: se algo falhar (ou demorar demais), mostra o motivo e botões para tentar
+    // de novo, em vez de ficar parado em "Carregando…". Os dados do usuário (localStorage, fotos) nunca são apagados aqui.
+    (function () {
+      function aviso(msg) {
+        var c = document.getElementById('carregando'), e = document.getElementById('carregando-erro');
+        if (!c || !e || c.classList.contains('some')) return;
+        e.hidden = false;
+        e.innerHTML = '<p></p><div><button type="button" data-x="recarregar">Tentar de novo</button>' +
+          '<button type="button" data-x="limpar">Limpar cache e recarregar</button></div><small>Seus registros, fotos e configurações não são apagados.</small>';
+        e.querySelector('p').textContent = msg;
+      }
+      window.lancerAviso = aviso;
+      // arquivo de script que não carregou (sem internet, arquivo faltando no GitHub…)
+      window.addEventListener('error', function (ev) {
+        var t = ev.target;
+        if (t && t.tagName === 'SCRIPT') aviso('Não foi possível carregar ' + (t.src ? t.src.split('/').pop() : 'um arquivo do app') + '. Verifique a internet.');
+        else if (t === window || !t) aviso('Erro ao abrir: ' + (ev.message || 'desconhecido') + (ev.filename ? ' (' + ev.filename.split('/').pop() + ':' + ev.lineno + ')' : ''));
+      }, true);
+      window.addEventListener('unhandledrejection', function (ev) {
+        var r = ev.reason; aviso('Erro ao abrir: ' + ((r && (r.message || r)) || 'desconhecido'));
+      });
+      // demorando demais: o carregamento continua, mas os botões aparecem
+      setTimeout(function () { aviso('Está demorando mais que o normal. Se a internet estiver lenta, aguarde; senão, tente de novo.'); }, 45000);
+      document.addEventListener('click', function (ev) {
+        var b = ev.target.closest && ev.target.closest('[data-x]'); if (!b) return;
+        if (b.dataset.x === 'recarregar') return location.reload();
+        // apaga só o cache de arquivos do app (código, modelo 3D) e o service worker; os dados ficam
+        var tarefas = [];
+        if (window.caches) tarefas.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); }));
+        if (navigator.serviceWorker) tarefas.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); }));
+        b.textContent = 'Limpando…';
+        Promise.all(tarefas).catch(function () {}).then(function () { location.reload(); });
+      });
+    })();
+  </script>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

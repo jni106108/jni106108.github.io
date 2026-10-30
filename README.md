@@ -22,7 +22,8 @@ Nenhum arquivo desta pasta passa de 25 MB (o maior é `modelo/lancer.glb`, com 1
 **APK (opcional):** em [pwabuilder.com](https://www.pwabuilder.com), cole o link do GitHub Pages → *Package for stores* → **Android**. O site gera o APK pronto para instalar, sem nada instalado no PC.
 
 > Atenção: no GitHub gratuito, o repositório do Pages é **público**: quem tiver o link vê o app e o catálogo. O histórico de manutenção **não** vai para o GitHub; ele fica só no celular.
-> Ao publicar uma versão nova, troque `VERSAO` em `sw.js` para o celular buscar os arquivos atualizados.
+> Ao publicar uma versão nova, troque `CODIGO` em `sw.js` para o celular buscar os arquivos atualizados. O cache `PESADO` (modelo 3D, three.js, diagramas, PDFs) é mantido entre versões; troque-o só se esses arquivos mudarem.
+> Se o app ficar preso na abertura, a própria tela de carregamento mostra o motivo e os botões "Tentar de novo" e "Limpar cache e recarregar" (os dados não são apagados).
 
 ## O que já funciona
 
