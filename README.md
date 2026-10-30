@@ -1,4 +1,7 @@
-# Lancer Garagem — protótipo
+# Lancer Club 67
+
+> Antes chamado "Lancer Garagem". A identidade visual (ícones, escudo da abertura, logos) fica em `marca/` — veja `marca/LEIA-ME.md`.
+> O que mudou em cada versão está em Configurações → **Novidades da versão** (lista `NOVIDADES` no início de `js/main.js`).
 
 Gêmeo digital de manutenção do **Mitsubishi Lancer GT 2.0 5MT (CY4A)**: carro 3D clicável, catálogo de peças com diagramas explodidos, histórico de trocas e conteúdo de reparo por região.
 

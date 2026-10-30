@@ -4,10 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1f2d44">
-<title>Lancer Garagem</title>
+<title>Lancer Club 67</title>
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/png" href="icones/icone-192.png">
-<link rel="apple-touch-icon" href="icones/apple-touch-icon.png">
+<!-- identidade visual: arquivos em marca/ (para trocar o logo, substitua os arquivos mantendo os nomes) -->
+<link rel="icon" type="image/png" sizes="48x48" href="marca/favicon-48.png">
+<link rel="icon" type="image/png" sizes="192x192" href="marca/icone-192.png">
+<link rel="apple-touch-icon" href="marca/apple-touch-180.png">
+<meta name="apple-mobile-web-app-title" content="Lancer Club 67">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -98,8 +101,8 @@
   <div id="toast" class="toast" hidden></div>
   <div id="carregando" class="carregando">
     <div class="carr-caixa">
-      <img src="icones/icone-192.png" alt="" width="64" height="64">
-      <b>Lancer Garagem</b>
+      <img class="carr-logo" src="marca/abertura.png" alt="Lancer Club 67">
+      <b>Lancer Club 67</b>
       <span id="carregando-txt">Carregando catálogo e modelo 3D…</span>
       <div class="carr-barra"><i id="carregando-barra"></i></div>
       <div id="carregando-erro" class="carr-erro" hidden></div>
@@ -119,10 +122,31 @@
         e.querySelector('p').textContent = msg;
       }
       window.lancerAviso = aviso;
+      // Descobre qual arquivo falhou: baixa cada um (erro 404 = faltando no GitHub) e importa os módulos
+      // que não têm efeito colateral (revela erro de código ou arquivo de versão diferente).
+      function diagnosticar() {
+        aviso('Não foi possível abrir o app. Verificando os arquivos…');
+        var arqs = ['js/main.js', 'js/carro3d.js', 'js/zonas.js', 'js/dados.js', 'js/anexos.js', 'css/app.css', 'data/catalogo.json',
+          'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js'];
+        Promise.all(arqs.map(function (a) {
+          return fetch(a, { cache: 'no-store' }).then(function (r) { return r.ok ? null : a + ' (erro ' + r.status + (r.status === 404 ? ': não existe no site' : '') + ')'; },
+            function () { return a + ' (sem conexão)'; });
+        })).then(function (falhas) {
+          falhas = falhas.filter(Boolean);
+          if (falhas.length) return aviso('Arquivo(s) com problema: ' + falhas.join(' · ') + '. Confira se estão no GitHub, na pasta certa e com o nome em letras minúsculas.');
+          var mods = ['./js/anexos.js', './js/zonas.js', './js/dados.js', './js/carro3d.js'];
+          return Promise.all(mods.map(function (m) { return import(m).then(function () { return null; }, function (e) { return m.slice(2) + ': ' + e.message; }); }))
+            .then(function (erros) {
+              erros = erros.filter(Boolean);
+              aviso(erros.length ? 'Erro no código: ' + erros.join(' · ') + '. Provavelmente um arquivo ficou de uma versão anterior: reenvie todos os arquivos da pasta js.'
+                : 'Os arquivos existem, mas o main.js não abriu. Ele pode ser de uma versão diferente dos outros: reenvie todos os arquivos da pasta js.');
+            });
+        });
+      }
       // arquivo de script que não carregou (sem internet, arquivo faltando no GitHub…)
       window.addEventListener('error', function (ev) {
         var t = ev.target;
-        if (t && t.tagName === 'SCRIPT') aviso('Não foi possível carregar ' + (t.src ? t.src.split('/').pop() : 'um arquivo do app') + '. Verifique a internet.');
+        if (t && t.tagName === 'SCRIPT') diagnosticar();
         else if (t === window || !t) aviso('Erro ao abrir: ' + (ev.message || 'desconhecido') + (ev.filename ? ' (' + ev.filename.split('/').pop() + ':' + ev.lineno + ')' : ''));
       }, true);
       window.addEventListener('unhandledrejection', function (ev) {
