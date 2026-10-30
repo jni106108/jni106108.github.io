@@ -127,7 +127,63 @@ const urlManual = pagina => {
   const parte = Math.ceil(pagina / PAGINAS_POR_PARTE);
   return `docs/manual-${parte}.pdf#page=${pagina - (parte - 1) * PAGINAS_POR_PARTE}`;
 };
-const VERSAO_APP = 'v6.2 · abertura mais rápida e segura (cache do modelo 3D mantido entre versões)';   // aparece em Configurações (troque junto com VERSAO do sw.js)
+// Novidades de cada versão (a primeira da lista é a atual). Aparece em Configurações → Novidades e abre
+// sozinha na primeira vez que o app é aberto numa versão nova. Para publicar uma versão: acrescente no topo.
+const NOVIDADES = [
+  { versao: '7', data: '30/10/2026', titulo: 'Lancer Club 67', itens: [
+    'Novo nome: Lancer Club 67, com o ícone LC67 na tela inicial do celular.',
+    'Nova tela de abertura com o escudo do clube e barra de carregamento.',
+    'Novidades da versão: esta tela. Fica em Configurações e abre sozinha na primeira vez em cada versão nova.',
+  ] },
+  { versao: '6.2', data: '30/10/2026', titulo: 'Abertura mais rápida e segura', itens: [
+    'O modelo 3D não é mais baixado de novo a cada atualização.',
+    'Barra de progresso do download do modelo 3D.',
+    'Se algo falhar ao abrir, a tela mostra o motivo, qual arquivo falhou e os botões “Tentar de novo” e “Limpar cache”.',
+  ] },
+  { versao: '6.1', data: '30/10/2026', titulo: 'Versão do carro e placa', itens: [
+    'Versão do carro na ficha (MT, HL, HL-T, HL-E, GT, GT AWD).',
+    'Valores em dinheiro digitados como na maquininha (5-0-0-0 = R$ 50,00).',
+    'Placa dianteira no centro ou no lado do motorista (Personalizar).',
+    'Placa automática no 3D: Mercosul, antiga cinza ou preta (30+ anos).',
+  ] },
+  { versao: '6', data: '30/10/2026', titulo: 'Consumo, fotos e vencimentos', itens: [
+    'Consumo em km/L com a opção “Completei o tanque”.',
+    'Backup pelo compartilhar do celular (Google Drive, e-mail…) e lembrete de backup.',
+    'Fotos e notas fiscais nos registros de serviço.',
+    'Vencimentos de IPVA, licenciamento, seguro e CNH no painel de alertas.',
+    'Relatório em PDF para revenda.',
+  ] },
+  { versao: '5', data: '30/10/2026', titulo: 'Painel de instrumentos', itens: [
+    'Hodômetro moderno ou clássico e luzes de alerta no painel superior.',
+    'Registro de abastecimento numa tela com visual de bomba.',
+    'Ganhos como motorista de aplicativo e aba Ganhos no livro.',
+    'Catálogo, manual e personalização (aerofólio, cor das rodas) na barra inferior.',
+  ] },
+  { versao: '4', data: '21/10/2026', titulo: 'Histórico mais prático', itens: [
+    'Histórico com anos que abrem e fecham.',
+    'Menu Ver mais / Editar / Excluir em cada serviço.',
+    'Registro de um serviço programado por vez, sem marcar outros por engano.',
+  ] },
+  { versao: '3', data: '21/10/2026', titulo: 'Nova organização', itens: [
+    'Filtro de camadas (motor, freios, suspensão…).',
+    'Menu do veículo, livro de manutenção com abas e ficha no estilo CRLV.',
+    'Configurações com tema claro, escuro ou do sistema.',
+  ] },
+];
+const VERSAO_APP = `v${NOVIDADES[0].versao} · ${NOVIDADES[0].titulo}`;
+function modalNovidades() {
+  fecharMenus();
+  abrirModal(`${cab('Novidades')}
+    <div class="cx-corpo novidades">
+      ${NOVIDADES.map((n, i) => `<section class="nov-versao ${i === 0 ? 'atual' : ''}">
+        <div class="nov-cab"><b>v${n.versao}</b>${i === 0 ? '<span class="novo">Nova</span>' : ''}<small>${n.data}</small></div>
+        <p>${esc(n.titulo)}</p>
+        ${i < 2 ? `<ul>${n.itens.map(t => `<li>${esc(t)}</li>`).join('')}</ul>`
+          : `<details><summary>Ver ${n.itens.length} mudanças</summary><ul>${n.itens.map(t => `<li>${esc(t)}</li>`).join('')}</ul></details>`}
+      </section>`).join('')}
+    </div>
+    <div class="cx-rodape"><button class="btn pri" data-acao="fechar-modal">Entendi</button></div>`);
+}   // aparece em Configurações (troque junto com VERSAO do sw.js)
 const TIPOS = { troca: 'Troca de peça', preventiva: 'Manutenção preventiva', reparo: 'Reparo', inspecao: 'Inspeção', outro: 'Outro' };
 const CORES = [['Prata', '#8d9399'], ['Cinza grafite', '#4a4e54'], ['Preto', '#15161a'], ['Branco', '#e9eaec'], ['Vermelho', '#9b1420'], ['Azul', '#1d3d7a']];
 
@@ -143,7 +199,7 @@ const cfg = () => D.getEstado().config;
 async function iniciar() {
   D.carregarEstado();
   try { await D.carregarCatalogo(); }
-  catch (e) { $('#carregando-txt').textContent = 'Não foi possível carregar o catálogo (data/catalogo.json).'; window.lancerAviso?.('Verifique a internet. No PC, abra pelo "Iniciar Lancer Garagem.bat".'); return; }
+  catch (e) { $('#carregando-txt').textContent = 'Não foi possível carregar o catálogo (data/catalogo.json).'; window.lancerAviso?.('Verifique a internet. No PC, abra pelo "Iniciar Lancer Garagem.bat" (servidor local).'); return; }
   $('#carregando-txt').textContent = 'Carregando modelo 3D…';
   carro = new Carro3D($('#cena'), {
     cor: D.getEstado().veiculo.cor,
@@ -168,6 +224,10 @@ async function iniciar() {
   $('#carregando').classList.add('some');
   setTimeout(() => $('#carregando').remove(), 500);
   setTimeout(() => $('#dica').classList.add('some'), 6000);
+  // primeira abertura numa versão nova: mostra o que mudou (uma vez só)
+  if (cfg().versaoVista !== NOVIDADES[0].versao) {
+    setTimeout(() => { if ($('#modal').hidden) modalNovidades(); D.atualizarConfig({ versaoVista: NOVIDADES[0].versao }); }, 900);
+  }
 }
 // barra da tela de abertura enquanto o modelo 3D (12,7 MB) é baixado
 function progressoModelo(baixado, total) {
@@ -864,7 +924,8 @@ function modalConfig() {
         ${seg('backupDias', [[7, '7 dias'], [15, '15 dias'], [30, '30 dias'], [0, 'Nunca']])}</div>
       <p class="aviso-fonte" style="margin-top:10px">Os dados ficam salvos só neste aparelho. O backup reúne tudo (inclusive as fotos) num único arquivo; para restaurar, use “Restaurar backup” e escolha esse arquivo.</p>
       <div class="secao">Sobre</div>
-      <p class="aviso-fonte"><b>Versão do app: ${VERSAO_APP}</b><br>${VEICULO_BASE.modelo} · ${VEICULO_BASE.versao} · ${VEICULO_BASE.motor}. Catálogo: EPC Mitsubishi (Amayama). Manual do proprietário Lancer 2012.</p>
+      <div class="menu-lista"><button data-acao="novidades">${ICO.sino}<span>Novidades da versão</span><small>${VERSAO_APP}</small></button></div>
+      <p class="aviso-fonte" style="margin-top:10px"><b>Lancer Club 67 · versão ${NOVIDADES[0].versao}</b><br>Mitsubishi Lancer (CY4A) · ${VEICULO_BASE.motor}. Catálogo: EPC Mitsubishi (Amayama). Manual do proprietário Lancer 2012.</p>
       ${carro.modeloReal ? `<p class="aviso-fonte">Modelo 3D: “Mitsubishi Lancer Sedan 2009” por <a href="https://sketchfab.com/3d-models/mitsubishi-lancer-sedan-2009-5219adf1a62b4b7393d3c1fc451be88b" target="_blank" rel="noopener">Nieve5677</a> (Sketchfab), licença <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> — simplificado e dividido em peças para este app. Mecânica interna genérica.</p>` : ''}
     </div>`);
 }
@@ -882,12 +943,12 @@ async function fazerBackup() {
   toast('Preparando backup…');
   let blob;
   try { blob = await D.exportarJSON(); } catch (e) { return toast('Não foi possível gerar o backup'); }
-  const nome = `lancer-garagem-backup-${D.hoje()}`;
+  const nome = `lancer-club-67-backup-${D.hoje()}`;
   // o Android só compartilha alguns tipos de arquivo: tenta .json e, se não der, o mesmo conteúdo como .txt
   const opcoes = [new File([blob], nome + '.json', { type: 'application/json' }), new File([blob], nome + '.txt', { type: 'text/plain' })];
   const arq = navigator.canShare && opcoes.find(f => { try { return navigator.canShare({ files: [f] }); } catch { return false; } });
   if (arq && celular()) {
-    try { await navigator.share({ files: [arq], title: 'Backup Lancer Garagem' }); }
+    try { await navigator.share({ files: [arq], title: 'Backup Lancer Club 67' }); }
     catch (e) { if (e.name === 'AbortError') return toast('Backup cancelado'); baixar(blob, nome + '.json'); }
   } else baixar(blob, nome + '.json');
   D.atualizarConfig({ ultimoBackup: D.hoje() });
@@ -945,7 +1006,7 @@ function gerarRelatorio(op) {
         ${op.valores ? `<td class="num">${D.brl(D.totalRegistro(r))}</td>` : ''}</tr>`).join('')}
     </tbody>${op.valores ? `<tfoot><tr><td colspan="5">Total</td><td class="num">${D.brl(total)}</td></tr></tfoot>` : ''}</table>` : '<p>Nenhum serviço registrado.</p>'}
     ${op.consumo && e.abastecimentos.length ? `<h2>Abastecimentos</h2><p>${e.abastecimentos.length} abastecimentos registrados${op.valores ? ` · ${D.brl(combTotal)}` : ''}${cons.media ? ` · consumo médio ${fmt(cons.media, 1)} km/L em ${D.km(cons.kmRodados)} medidos` : ''}.</p>` : ''}
-    <footer>Gerado pelo app Lancer Garagem a partir dos registros feitos pelo proprietário. Não é documento oficial; notas fiscais e fotos ficam com o proprietário.</footer>`;
+    <footer>Gerado pelo app Lancer Club 67 a partir dos registros feitos pelo proprietário. Não é documento oficial; notas fiscais e fotos ficam com o proprietário.</footer>`;
   document.getElementById('relatorio')?.remove();
   document.body.appendChild(el);
   document.body.classList.add('imprimindo');
@@ -1354,7 +1415,7 @@ const conteudoLivro = {
       titulo: 'Veículo', sub: `Mitsubishi Lancer ${v.versao || 'GT'} · 2.0 Sedan (CY4A)`,
       ferramentas: trocaDoc(estilo),
       corpo: `<div class="doc doc-${estilo} ${ed ? 'editando' : ''}" data-doc>
-        <div class="d-topo"><div><b>Ficha do veículo</b><small>Visual inspirado no CRLV · sem valor de documento</small></div><img src="icones/icone-192.png" alt=""></div>
+        <div class="d-topo"><div><b>Ficha do veículo</b><small>Visual inspirado no CRLV · sem valor de documento</small></div><img src="marca/icone-192.png" alt=""></div>
         <div class="d-grade">
           ${campo('Código Renavam', 'renavam', { cls: 'mono', ph: '11 dígitos' })}
           ${campo('Placa', 'placa', { cls: 'mono destaque', ph: 'ABC1D23' })}
@@ -1484,6 +1545,7 @@ function onClique(e) {
     case 'cancelar-veiculo': cancelarEdicaoVeiculo(); return renderLivrete();
     case 'atualizar-km': return modalKm();
     case 'alertas': return abrirAlertas();
+    case 'novidades': return modalNovidades();
     case 'backup': case 'exportar': return fazerBackup();
     case 'relatorio': return modalRelatorio();
     case 'gerar-relatorio': {
@@ -1578,7 +1640,7 @@ function onClique(e) {
       document.querySelectorAll('[data-lkm]').forEach(i => D.ajustarLembrete(i.dataset.lkm, +i.value || null, +$(`[data-lmes="${i.dataset.lkm}"]`).value || null));
       toast('Intervalos salvos'); return modalLembretes();
     case 'catalogo': fecharMenus(); return modalCatalogo();
-    case 'exportar-csv': return baixar(D.exportarCSV(), `lancer-historico-${D.hoje()}.csv`);
+    case 'exportar-csv': return baixar(D.exportarCSV(), `lancer-club-67-historico-${D.hoje()}.csv`);
     case 'importar': {
       const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json,.txt,application/json,text/plain';
       inp.onchange = async () => {

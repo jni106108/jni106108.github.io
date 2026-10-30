@@ -202,7 +202,7 @@ export async function exportarJSON() {
 }
 export async function importarJSON(texto) {
   const d = JSON.parse(texto);
-  if (!d || !Array.isArray(d.registros)) throw new Error('Arquivo não parece um backup do Lancer Garagem.');
+  if (!d || !Array.isArray(d.registros)) throw new Error('Arquivo não parece um backup do Lancer Club 67.');
   if (d.anexos) await Anexos.importar(d.anexos);
   estado = completar({ veiculo: d.veiculo, registros: d.registros, abastecimentos: d.abastecimentos || [], ganhos: d.ganhos || [],
     documentos: d.documentos, lembretes: d.lembretes || {}, config: { ...(d.config || estado.config), ultimoBackup: hoje() } });
