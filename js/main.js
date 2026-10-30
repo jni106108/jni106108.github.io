@@ -127,7 +127,7 @@ const urlManual = pagina => {
   const parte = Math.ceil(pagina / PAGINAS_POR_PARTE);
   return `docs/manual-${parte}.pdf#page=${pagina - (parte - 1) * PAGINAS_POR_PARTE}`;
 };
-const VERSAO_APP = 'v6.1 · versão na ficha, valores tipo maquininha, placa dianteira';   // aparece em Configurações (troque junto com VERSAO do sw.js)
+const VERSAO_APP = 'v6.2 · abertura mais rápida e segura (cache do modelo 3D mantido entre versões)';   // aparece em Configurações (troque junto com VERSAO do sw.js)
 const TIPOS = { troca: 'Troca de peça', preventiva: 'Manutenção preventiva', reparo: 'Reparo', inspecao: 'Inspeção', outro: 'Outro' };
 const CORES = [['Prata', '#8d9399'], ['Cinza grafite', '#4a4e54'], ['Preto', '#15161a'], ['Branco', '#e9eaec'], ['Vermelho', '#9b1420'], ['Azul', '#1d3d7a']];
 
@@ -143,11 +143,13 @@ const cfg = () => D.getEstado().config;
 async function iniciar() {
   D.carregarEstado();
   try { await D.carregarCatalogo(); }
-  catch (e) { $('#carregando').textContent = 'Não foi possível carregar data/catalogo.json — abra o app pelo servidor local (Iniciar Lancer Garagem.bat).'; return; }
+  catch (e) { $('#carregando-txt').textContent = 'Não foi possível carregar o catálogo (data/catalogo.json).'; window.lancerAviso?.('Verifique a internet. No PC, abra pelo "Iniciar Lancer Garagem.bat".'); return; }
+  $('#carregando-txt').textContent = 'Carregando modelo 3D…';
   carro = new Carro3D($('#cena'), {
     cor: D.getEstado().veiculo.cor,
     aoSelecionar: id => abrirZona(id),
     aoPassar: mostrarRotulo,
+    aoProgresso: progressoModelo,
   });
   carro.vistas = Object.fromEntries(ZONAS.map(z => [z.id, z.vista]));
   atualizarPlaca();
@@ -159,14 +161,23 @@ async function iniciar() {
   montarOdometro();
   new ResizeObserver(ajustarCluster).observe($('#cluster'));
   await carro.pronto;
-  criarPinos();
-  $('#pinos').hidden = !cfg().pinos;
-  carro.aoQuadro = atualizarPinos;
-  D.aoMudar(() => { atualizarBarra(); if (ui.zona) renderPainel(); if (ui.livrete) renderLivrete(); });
-  atualizarBarra();
-  ajustarMargem();
-  renderFiltro();
-  montarCarrossel();
+  $('#carregando-txt').textContent = 'Preparando…';
+  // daqui em diante uma falha não deixa o app preso em "Carregando": ele abre e avisa
+  try { montarInterface(); }
+  catch (e) { console.error(e); setTimeout(() => toast('Parte do app não abriu: ' + (e.message || e)), 600); }
+  $('#carregando').classList.add('some');
+  setTimeout(() => $('#carregando').remove(), 500);
+  setTimeout(() => $('#dica').classList.add('some'), 6000);
+}
+// barra da tela de abertura enquanto o modelo 3D (12,7 MB) é baixado
+function progressoModelo(baixado, total) {
+  const mb = v => (v / 1048576).toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+  const pct = total ? Math.min(100, Math.round(baixado / total * 100)) : null;
+  $('#carregando-txt').textContent = pct !== null ? `Carregando modelo 3D… ${pct}% (${mb(baixado)} de ${mb(total)} MB)` : `Carregando modelo 3D… ${mb(baixado)} MB`;
+  $('#carregando-barra').style.width = (pct ?? Math.min(95, baixado / 13.3e6 * 100)) + '%';
+}
+function montarInterface() {
+  // os toques são ligados primeiro: se alguma parte abaixo falhar, o resto do app continua respondendo
   document.addEventListener('click', onClique);
   document.addEventListener('change', onTroca);
   document.addEventListener('keydown', e => {
@@ -181,9 +192,14 @@ async function iniciar() {
     const d = e.key === 'ArrowLeft' ? -1 : 1;
     if (!ui.livrete) passoRegiao(d);
   });
-  $('#carregando').classList.add('some');
-  setTimeout(() => $('#carregando').remove(), 500);
-  setTimeout(() => $('#dica').classList.add('some'), 6000);
+  D.aoMudar(() => { atualizarBarra(); if (ui.zona) renderPainel(); if (ui.livrete) renderLivrete(); });
+  criarPinos();
+  $('#pinos').hidden = !cfg().pinos;
+  carro.aoQuadro = atualizarPinos;
+  renderFiltro();
+  montarCarrossel();
+  ajustarMargem();
+  atualizarBarra();
 }
 
 // Painel superior: hodômetro + luzes de alerta (redesenhado sempre que os dados mudam)

@@ -183,10 +183,11 @@ function materiais(cor) {
 }
 
 export class Carro3D {
-  constructor(container, { cor = '#8d9399', aoSelecionar, aoPassar } = {}) {
+  constructor(container, { cor = '#8d9399', aoSelecionar, aoPassar, aoProgresso } = {}) {
     this.container = container;
     this.aoSelecionar = aoSelecionar || (() => {});
     this.aoPassar = aoPassar || (() => {});
+    this.aoProgresso = aoProgresso || (() => {});   // (bytes baixados, total) do modelo 3D
     this.zonas = {};          // id → { meshes: [], movers: [], centro: V3 }
     this.selecionada = null; this.instSel = null; this.hover = null;
     this.filtro = null; this.filtroInterno = false;   // filtro de camadas: zonas sólidas (null = sem filtro)
@@ -312,14 +313,23 @@ export class Carro3D {
     this.raiz = new THREE.Group(); this.cena.add(this.raiz);
     this.corpo = [];
     let gltf = null;
-    try { gltf = await new GLTFLoader().loadAsync('modelo/lancer.glb'); } catch { /* sem arquivo: carro procedural */ }
+    try { gltf = await new GLTFLoader().loadAsync('modelo/lancer.glb', ev => this.aoProgresso(ev.loaded, ev.total)); }
+    catch (e) { console.warn('Modelo 3D não carregou, usando o carro procedural', e); }
     this.modeloReal = !!gltf;
-    if (gltf) this._corpoGLB(gltf);
-    else { this._corpoProcedural(); this._rodas(); this._interior(); }
+    if (gltf) {
+      try { this._corpoGLB(gltf); }
+      catch (e) {   // modelo corrompido (ex.: download incompleto): recomeça com o carro procedural
+        console.warn('Modelo 3D inválido, usando o carro procedural', e);
+        this.cena.remove(this.raiz); this.raiz = new THREE.Group(); this.cena.add(this.raiz);
+        this.corpo = []; this.zonas = {}; this.anim = []; this.placas = []; this.aerofolios = []; this.modeloReal = false;
+        this._corpoProcedural(); this._rodas(); this._interior();
+      }
+    } else { this._corpoProcedural(); this._rodas(); this._interior(); }
     this._mecanica();
     this._calcularCentros();
-    this.setPlaca(this._placaTexto || '', this._placaInfo);
-    if (this._perso) this.setPersonalizacao(this._perso);
+    // extras visuais: se falharem, o carro abre assim mesmo
+    try { this.setPlaca(this._placaTexto || '', this._placaInfo); } catch (e) { console.warn('Placa', e); }
+    try { if (this._perso) this.setPersonalizacao(this._perso); } catch (e) { console.warn('Personalização', e); }
     this._aplicarMateriais();
   }
 
@@ -963,7 +973,9 @@ export class Carro3D {
     this._perso = { aerofolio, corRodas, placaDianteira };
     for (const m of this.aerofolios || []) m.visible = aerofolio;
     if (!this.raiz) return;
-    if (this.zonas.parachoque_d) this._placaDianteira(placaDianteira);
+    if (this.zonas.parachoque_d) {
+      try { this._placaDianteira(placaDianteira); } catch (e) { console.warn('Placa dianteira', e); }
+    }
     const cor = corRodas || '#a3a9b0';
     this.M.roda.color.set(cor);
     this.raiz.traverse(o => { if (o.isMesh && o.userData.matOrig === this.M.roda) o.material.color.set(cor); });
