@@ -34,8 +34,11 @@ const padrao = () => ({
     renavam: '', proprietario: '', municipio: '', uf: '', combustivel: 'GASOLINA', motorNum: '', categoria: 'PARTICULAR', exercicio: '',
   },
   registros: [],
+  abastecimentos: [],   // { id, data, combustivel: etanol | gasolina | premium, total, preco, litros, km, posto }
+  ganhos: [],           // ganhos como motorista de app: { id, inicio, fim, valor }
   lembretes: {}, // overrides { id: { km, meses } }
-  config: { tema: 'sistema', documento: 'branco', pinos: true },   // tema: sistema | claro | escuro
+  // tema: sistema | claro | escuro · odometro: moderno | classico · corRodas: null = original
+  config: { tema: 'sistema', documento: 'branco', pinos: true, odometro: 'moderno', aerofolio: true, corRodas: null },
 });
 
 let estado = padrao();
@@ -73,13 +76,44 @@ export function atualizarConfig(campos) {
   Object.assign(estado.config, campos);
   salvar();
 }
+const novoId = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+// km informado num lançamento mais alto que o hodômetro atualiza o hodômetro
+function subirHodometro(km, data) {
+  if (+km > +estado.veiculo.km) { estado.veiculo.km = +km; estado.veiculo.kmData = data || hoje(); }
+}
+
+// ── Abastecimentos e ganhos ─────────────────────────────────
+export function salvarAbastecimento(a) {
+  a.id ||= novoId('a');
+  const i = estado.abastecimentos.findIndex(x => x.id === a.id);
+  if (i >= 0) estado.abastecimentos[i] = a; else estado.abastecimentos.push(a);
+  subirHodometro(a.km, a.data);
+  salvar();
+  return a;
+}
+export function excluirAbastecimento(id) {
+  estado.abastecimentos = estado.abastecimentos.filter(a => a.id !== id);
+  salvar();
+}
+export function salvarGanho(g) {
+  g.id ||= novoId('g');
+  const i = estado.ganhos.findIndex(x => x.id === g.id);
+  if (i >= 0) estado.ganhos[i] = g; else estado.ganhos.push(g);
+  salvar();
+  return g;
+}
+export function excluirGanho(id) {
+  estado.ganhos = estado.ganhos.filter(g => g.id !== id);
+  salvar();
+}
+export const abastecimentosOrdenados = () => [...estado.abastecimentos].sort((a, b) => (b.data || '').localeCompare(a.data || '') || (+b.km - +a.km));
+export const ganhosOrdenados = () => [...estado.ganhos].sort((a, b) => (b.fim || '').localeCompare(a.fim || ''));
 
 export function salvarRegistro(reg) {
-  reg.id ||= 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  reg.id ||= novoId('r');
   const i = estado.registros.findIndex(r => r.id === reg.id);
   if (i >= 0) estado.registros[i] = reg; else estado.registros.push(reg);
-  // quilometragem mais alta registrada atualiza o hodômetro
-  if (+reg.km > +estado.veiculo.km) { estado.veiculo.km = +reg.km; estado.veiculo.kmData = reg.data; }
+  subirHodometro(reg.km, reg.data);
   salvar();
   return reg;
 }
@@ -130,7 +164,8 @@ export function exportarJSON() {
 export function importarJSON(texto) {
   const d = JSON.parse(texto);
   if (!d || !Array.isArray(d.registros)) throw new Error('Arquivo não parece um backup do Lancer Garagem.');
-  estado = completar({ veiculo: d.veiculo, registros: d.registros, lembretes: d.lembretes || {}, config: d.config || estado.config });
+  estado = completar({ veiculo: d.veiculo, registros: d.registros, abastecimentos: d.abastecimentos || [], ganhos: d.ganhos || [],
+    lembretes: d.lembretes || {}, config: d.config || estado.config });
   salvar();
 }
 export function exportarCSV() {
@@ -138,6 +173,9 @@ export function exportarCSV() {
   for (const r of registrosOrdenados()) {
     const vp = (r.pecas || []).reduce((s, p) => s + (+p.preco || 0) * (+p.qtd || 1), 0);
     linhas.push([r.data, r.km, r.tipo, r.titulo, r.zona, (r.pecas || []).map(p => `${p.oem} ${p.desc || ''} x${p.qtd || 1}`).join(' | '), vp.toFixed(2), (+r.maoDeObra || 0).toFixed(2), totalRegistro(r).toFixed(2), r.oficina || '', r.obs || '']);
+  }
+  for (const a of abastecimentosOrdenados()) {
+    linhas.push([a.data, a.km || '', 'abastecimento', `Abastecimento ${a.combustivel}`, '', `${(+a.litros || 0).toFixed(3)} L a R$ ${(+a.preco || 0).toFixed(3)}/L`, (+a.total || 0).toFixed(2), '0.00', (+a.total || 0).toFixed(2), a.posto || '', '']);
   }
   const csv = linhas.map(l => l.map(c => '"' + String(c ?? '').replace(/"/g, '""') + '"').join(';')).join('\r\n');
   return new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });

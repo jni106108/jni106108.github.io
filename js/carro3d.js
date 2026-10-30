@@ -280,7 +280,8 @@ export class Carro3D {
   _m(geo, mat, zona, { corpo = false, sombra = true, pai, forro = false } = {}) {
     const mesh = new THREE.Mesh(geo, zona ? mat.clone() : mat);
     mesh.castShadow = sombra; mesh.receiveShadow = false;
-    mesh.userData = { zona, corpo, sombra, matBase: { opacity: mesh.material.opacity, transparent: mesh.material.transparent } };
+    // matOrig = material de origem (ex.: M.roda), usado na personalização (cor das rodas)
+    mesh.userData = { zona, corpo, sombra, matOrig: mat, matBase: { opacity: mesh.material.opacity, transparent: mesh.material.transparent } };
     (pai || this.raiz).add(mesh);
     if (forro) {
       // forro interno: cópia encolhida com material escuro de face traseira (vira o "interior" visto pelos vidros)
@@ -318,6 +319,7 @@ export class Carro3D {
     this._mecanica();
     this._calcularCentros();
     this.setPlaca(this._placaTexto || '');
+    if (this._perso) this.setPersonalizacao(this._perso);
     this._aplicarMateriais();
   }
 
@@ -337,10 +339,15 @@ export class Carro3D {
         const p = this._m(o.geometry, M.placa, z, { corpo: true, sombra: false });
         (this.placas ||= []).push(p); (porChave[z + '|'] ||= []).push(p); continue;
       }
-      const m = this._m(o.geometry, MAT[mat] || M.preto, zona, { corpo: CORPO.has(zona), sombra: mat !== 'windowglass' && mat !== 'clearglass' });
-      m.userData.inst = inst || null;
-      m.material.side = THREE.DoubleSide;   // painéis do modelo são cascas finas (capô aberto mostra o lado de baixo)
-      (porChave[zona + '|' + inst] ||= []).push(m);
+      // a pintura da tampa traseira traz o aerofólio junto: separa-o para poder tirar/pôr (personalização)
+      const geos = zona === 'porta_malas' && mat === 'carpaint' ? separarAerofolio(o.geometry) : [o.geometry];
+      geos.forEach((geo, k) => {
+        const m = this._m(geo, MAT[mat] || M.preto, zona, { corpo: CORPO.has(zona), sombra: mat !== 'windowglass' && mat !== 'clearglass' });
+        m.userData.inst = inst || null;
+        m.material.side = THREE.DoubleSide;   // painéis do modelo são cascas finas (capô aberto mostra o lado de baixo)
+        if (k === 1) (this.aerofolios ||= []).push(m);
+        (porChave[zona + '|' + inst] ||= []).push(m);
+      });
     }
     const caixa = ms => ms.reduce((b, m) => b.expandByObject(m), new THREE.Box3());
     const sinal = inst => (inst.endsWith('E') ? -1 : 1);
@@ -510,6 +517,7 @@ export class Carro3D {
     this.placas.push(placaT);
     const aerofolio = this._m(new RoundedBoxGeometry(0.12, 0.022, 1.1, 2, 0.01), P, 'porta_malas', { corpo: true });
     aerofolio.position.set(-2.17, topo(-2.17) + coroa(-2.17) + 0.006, 0);
+    (this.aerofolios ||= []).push(aerofolio);
     const pTampa = this._pivo([tampa, faceT, placaT, aerofolio], new V3(-1.552, topo(-1.552) + coroa(-1.552), 0));
     this._mover('porta_malas', pTampa, { eixo: 'z', ang: -1.15 });
 
@@ -769,7 +777,7 @@ export class Carro3D {
     const f = this.filtro, alvos = [];
     this.raiz.traverse(o => {
       const ud = o.userData;
-      if (!o.isMesh || !ud.zona) return;
+      if (!o.isMesh || !ud.zona || !o.visible) return;   // invisível = aerofólio removido
       if (f && ud.corpo && !f.has(ud.zona) && ud.zona !== this.selecionada) return;
       alvos.push(o);
     });
@@ -900,6 +908,16 @@ export class Carro3D {
     this.renderer.toneMappingExposure = escuro ? 1.18 : 1.08;
   }
 
+  // Personalização: { aerofolio: bool, corRodas: '#hex' | null (original) }. Antes do modelo carregar, só guarda.
+  setPersonalizacao({ aerofolio = true, corRodas = null } = {}) {
+    this._perso = { aerofolio, corRodas };
+    for (const m of this.aerofolios || []) m.visible = aerofolio;
+    if (!this.raiz) return;
+    const cor = corRodas || '#a3a9b0';
+    this.M.roda.color.set(cor);
+    this.raiz.traverse(o => { if (o.isMesh && o.userData.matOrig === this.M.roda) o.material.color.set(cor); });
+  }
+
   setCor(cor) {
     this.M.pintura.color.set(cor);
     this.raiz.traverse(o => { if (o.isMesh && o.material.isMeshPhysicalMaterial && o.material.clearcoat === 1 && o.material.metalness === 0.55) o.material.color.set(cor); });
@@ -992,6 +1010,32 @@ export class Carro3D {
     this.renderer.render(this.cena, this.camera);
     this.aoQuadro && this.aoQuadro();
   }
+}
+
+// Divide a malha em [tampa, aerofólio]: o aerofólio é a parte conectada que fica toda acima de 1,1 m
+// (no modelo do Sketchfab ele é uma peça própria, só foi gravado no mesmo arquivo da tampa).
+function separarAerofolio(geo) {
+  const P = geo.attributes.position, I = geo.index?.array;
+  if (!I) return [geo];
+  // vértices iguais (posição) contam como o mesmo ponto; união por triângulo
+  const ids = new Map(), vid = new Int32Array(P.count);
+  for (let i = 0; i < P.count; i++) {
+    const k = `${P.getX(i).toFixed(4)},${P.getY(i).toFixed(4)},${P.getZ(i).toFixed(4)}`;
+    if (!ids.has(k)) ids.set(k, ids.size);
+    vid[i] = ids.get(k);
+  }
+  const pai = Int32Array.from({ length: ids.size }, (_, i) => i);
+  const raiz = x => { while (pai[x] !== x) { pai[x] = pai[pai[x]]; x = pai[x]; } return x; };
+  for (let t = 0; t < I.length; t += 3) { const a = raiz(vid[I[t]]); pai[raiz(vid[I[t + 1]])] = a; pai[raiz(vid[I[t + 2]])] = a; }
+  const minY = new Map();
+  for (let t = 0; t < I.length; t += 3) {
+    const r = raiz(vid[I[t]]), y = Math.min(P.getY(I[t]), P.getY(I[t + 1]), P.getY(I[t + 2]));
+    minY.set(r, Math.min(minY.get(r) ?? Infinity, y));
+  }
+  const tampa = [], asa = [];
+  for (let t = 0; t < I.length; t += 3) (minY.get(raiz(vid[I[t]])) > 1.1 ? asa : tampa).push(I[t], I[t + 1], I[t + 2]);
+  if (!asa.length) return [geo];
+  return [tampa, asa].map(idx => { const g = geo.clone(); g.setIndex(idx); return g; });
 }
 
 class HelixCurve extends THREE.Curve {
