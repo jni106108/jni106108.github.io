@@ -318,7 +318,7 @@ export class Carro3D {
     else { this._corpoProcedural(); this._rodas(); this._interior(); }
     this._mecanica();
     this._calcularCentros();
-    this.setPlaca(this._placaTexto || '');
+    this.setPlaca(this._placaTexto || '', this._placaInfo);
     if (this._perso) this.setPersonalizacao(this._perso);
     this._aplicarMateriais();
   }
@@ -881,25 +881,75 @@ export class Carro3D {
     this._aplicarMateriais();
   }
 
-  // Placa Mercosul desenhada num canvas (texto vem dos dados do veículo)
-  setPlaca(texto) {
-    this._placaTexto = texto;
+  // Placa desenhada num canvas, no modelo que corresponde ao texto (automático, o usuário não escolhe):
+  //   ABC1D23 → Mercosul · ABC1234 → modelo antigo cinza (com UF e município) · carro com 30+ anos → placa preta (coleção)
+  setPlaca(texto, { anoFab, uf, municipio } = {}) {
+    this._placaTexto = texto; this._placaInfo = { anoFab, uf, municipio };
     if (!this.placas) return;
+    const t = (texto || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
+    const preta = +anoFab > 1900 && new Date().getFullYear() - +anoFab >= 30;
+    const antiga = /^[A-Z]{3}\d{4}$/.test(t);
     const cv = document.createElement('canvas'); cv.width = 512; cv.height = 166;
     const g = cv.getContext('2d');
-    g.fillStyle = '#f7f8f9'; g.fillRect(0, 0, 512, 166);
-    g.fillStyle = '#1f3f99'; g.fillRect(0, 0, 512, 34);
-    g.fillStyle = '#fff'; g.font = 'bold 22px Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText('BRASIL', 256, 18);
-    g.fillStyle = '#2e9e4f'; g.fillRect(468, 7, 30, 20); g.fillStyle = '#f4d000';   // bandeira simplificada
-    g.beginPath(); g.moveTo(483, 9); g.lineTo(496, 17); g.lineTo(483, 25); g.lineTo(470, 17); g.fill();
-    g.fillStyle = '#1f3f99'; g.beginPath(); g.arc(483, 17, 4, 0, Math.PI * 2); g.fill();
-    g.strokeStyle = '#222'; g.lineWidth = 6; g.strokeRect(3, 3, 506, 160);
-    const t = (texto || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
-    g.fillStyle = '#111'; g.font = 'bold 104px "Arial Narrow", "Roboto Condensed", Arial, sans-serif';
-    g.fillText(t ? t.slice(0, 3) + ' ' + t.slice(3) : '', 256, 104, 470);
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    if (preta || antiga) {
+      // modelo antigo: tarja com UF e município em cima; cinza (particular) ou preta (coleção)
+      const fundo = preta ? ['#2a2a2a', '#0c0c0c'] : ['#d4d7da', '#a9adb1'], letra = preta ? '#d8d8d8' : '#151515';
+      const gr = g.createLinearGradient(0, 0, 0, 166); gr.addColorStop(0, fundo[0]); gr.addColorStop(1, fundo[1]);
+      g.fillStyle = gr; g.fillRect(0, 0, 512, 166);
+      g.strokeStyle = preta ? '#9a9a9a' : '#222'; g.lineWidth = 6; g.strokeRect(3, 3, 506, 160);
+      g.fillStyle = letra; g.font = 'bold 22px Arial, sans-serif';
+      g.fillText([uf, municipio].filter(Boolean).join(' - ').toUpperCase() || 'BRASIL', 256, 22, 440);
+      g.fillRect(14, 38, 484, 2);
+      g.font = 'bold 100px "Arial Narrow", "Roboto Condensed", Arial, sans-serif';
+      g.fillText(t ? (/^[A-Z]{3}\d{4}$/.test(t) ? t.slice(0, 3) + '-' + t.slice(3) : t.slice(0, 3) + ' ' + t.slice(3)) : '', 256, 106, 470);
+    } else {
+      // Mercosul
+      g.fillStyle = '#f7f8f9'; g.fillRect(0, 0, 512, 166);
+      g.fillStyle = '#1f3f99'; g.fillRect(0, 0, 512, 34);
+      g.fillStyle = '#fff'; g.font = 'bold 22px Arial, sans-serif';
+      g.fillText('BRASIL', 256, 18);
+      g.fillStyle = '#2e9e4f'; g.fillRect(468, 7, 30, 20); g.fillStyle = '#f4d000';   // bandeira simplificada
+      g.beginPath(); g.moveTo(483, 9); g.lineTo(496, 17); g.lineTo(483, 25); g.lineTo(470, 17); g.fill();
+      g.fillStyle = '#1f3f99'; g.beginPath(); g.arc(483, 17, 4, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = '#222'; g.lineWidth = 6; g.strokeRect(3, 3, 506, 160);
+      g.fillStyle = '#111'; g.font = 'bold 104px "Arial Narrow", "Roboto Condensed", Arial, sans-serif';
+      g.fillText(t ? t.slice(0, 3) + ' ' + t.slice(3) : '', 256, 104, 470);
+    }
     const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
     for (const p of this.placas) { p.material.map = tex; p.material.color.set(0xffffff); p.material.needsUpdate = true; }
+  }
+
+  // Placa dianteira: 'original' (centro do para-choque) ou 'lado' (lado do motorista, entre o farol e o farol
+  // de neblina, como alguns donos fazem / como no Evo). A posição lateral é medida no próprio para-choque:
+  // a placa acompanha a curva (inclinação da corda) e fica afastada o bastante para não entrar na lataria.
+  _placaDianteira(posicao) {
+    const p = this.placas?.find(x => x.userData.zona === 'parachoque_d'); if (!p) return;
+    if (!p.userData.base) {   // centraliza a geometria uma vez, para girar a placa em torno do próprio centro
+      p.geometry.computeBoundingBox();
+      const c = p.geometry.boundingBox.getCenter(new V3()), tam = p.geometry.boundingBox.getSize(new V3());
+      p.geometry.translate(-c.x, -c.y, -c.z); p.position.add(c);
+      p.userData.base = { pos: p.position.clone(), rotY: p.rotation.y, meia: tam.z / 2 };
+    }
+    const base = p.userData.base;
+    p.position.copy(base.pos); p.rotation.y = base.rotY;
+    if (posicao !== 'lado') return;
+    const pai = p.parent; pai.updateMatrixWorld(true);
+    const alvos = this.zonas.parachoque_d.meshes.filter(m => m !== p && !this.placas.includes(m));
+    const rc = new THREE.Raycaster(), y = base.pos.y, zc = -0.5, n = 9, pts = [];
+    for (let i = 0; i < n; i++) {
+      const z = zc - base.meia + (2 * base.meia * i) / (n - 1);
+      rc.set(pai.localToWorld(new V3(3, y, z)), new V3(-1, 0, 0));
+      const h = rc.intersectObjects(alvos, false)[0];
+      if (!h) return;   // não achou o para-choque: mantém no centro
+      pts.push(pai.worldToLocal(h.point.clone()));
+    }
+    const a = pts[0], b = pts[n - 1], d = new V3(b.x - a.x, 0, b.z - a.z).normalize();
+    const nrm = new V3(-d.z, 0, d.x); if (nrm.x < 0) nrm.negate();   // perpendicular à corda, para fora
+    const folga = Math.max(...pts.map(q => q.clone().sub(a).dot(nrm))) + 0.008;
+    const centro = a.clone().add(b).multiplyScalar(0.5).addScaledVector(nrm, folga);
+    p.position.set(centro.x, y, centro.z);
+    p.rotation.y = base.rotY + Math.atan2(-nrm.z, nrm.x);
   }
 
   // Fundo escuro (o fundo é o CSS da página): sombra mais forte para o carro não "flutuar"
@@ -909,10 +959,11 @@ export class Carro3D {
   }
 
   // Personalização: { aerofolio: bool, corRodas: '#hex' | null (original) }. Antes do modelo carregar, só guarda.
-  setPersonalizacao({ aerofolio = true, corRodas = null } = {}) {
-    this._perso = { aerofolio, corRodas };
+  setPersonalizacao({ aerofolio = true, corRodas = null, placaDianteira = 'original' } = {}) {
+    this._perso = { aerofolio, corRodas, placaDianteira };
     for (const m of this.aerofolios || []) m.visible = aerofolio;
     if (!this.raiz) return;
+    if (this.zonas.parachoque_d) this._placaDianteira(placaDianteira);
     const cor = corRodas || '#a3a9b0';
     this.M.roda.color.set(cor);
     this.raiz.traverse(o => { if (o.isMesh && o.userData.matOrig === this.M.roda) o.material.color.set(cor); });

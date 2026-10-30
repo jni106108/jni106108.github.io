@@ -1,6 +1,7 @@
 import { Carro3D } from './carro3d.js';
 import { ZONAS, ZONA_POR_ID, zonaDoGrupo, traduz, videoUrl, VEICULO_BASE, REGIOES, FILTROS, FILTRO_POR_ID } from './zonas.js';
 import * as D from './dados.js';
+import * as Anexos from './anexos.js';
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -47,6 +48,51 @@ const CORES_RODAS = [[null, 'Original (prata)', '#a3a9b0'], ['#4a4e54', 'Grafite
 // números digitados com vírgula ("5,89") ou ponto ("5.89")
 const numero = s => { s = String(s ?? '').trim(); if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.'); return parseFloat(s) || 0; };
 const fmt = (v, casas) => (+v || 0).toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas });
+// Campo de dinheiro preenchido da direita para a esquerda (como maquininha): 5 → 0,05 · 50 → 0,50 · 5000 → 50,00.
+// A vírgula se posiciona sozinha; apagar tira o último algarismo. casas = 2 (reais) ou 3 (preço do litro, como na bomba).
+function mascaraMoeda(el, casas) {
+  const aplicar = d => {
+    d = d.replace(/^0+/, '').slice(0, 9);
+    el.dataset.d = d;
+    el.value = d ? fmt(+d / 10 ** casas, casas) : '';
+    requestAnimationFrame(() => { try { el.setSelectionRange(el.value.length, el.value.length); } catch {} });
+    el.dispatchEvent(new Event('input', { bubbles: true }));   // avisa quem calcula (ex.: litros na bomba)
+  };
+  el.setAttribute('inputmode', 'numeric');
+  aplicar(el.value ? String(Math.round(numero(el.value) * 10 ** casas)) : '');
+  el.addEventListener('beforeinput', e => {
+    const t = e.inputType, d = el.dataset.d || '';
+    if (t === 'insertText' || t === 'insertReplacementText' || t === 'insertFromPaste') {
+      e.preventDefault(); aplicar(d + String(e.data ?? e.dataTransfer?.getData('text') ?? '').replace(/\D/g, ''));
+    } else if (t.startsWith('delete')) { e.preventDefault(); aplicar(d.slice(0, -1)); }
+  });
+  // teclados que não mandam "beforeinput" (alguns Android): refaz a partir do que ficou no campo
+  el.addEventListener('input', e => {
+    if (e.isTrusted && el.value !== (el.dataset.d ? fmt(+el.dataset.d / 10 ** casas, casas) : '')) {
+      let d = el.value.replace(/\D/g, '').replace(/^0+/, '');
+      if (e.inputType?.startsWith('delete') && d === el.dataset.d) d = d.slice(0, -1);
+      aplicar(d);
+    }
+  }, true);
+  el.addEventListener('focus', () => requestAnimationFrame(() => { try { el.setSelectionRange(el.value.length, el.value.length); } catch {} }));
+}
+ICO.nuvem = '<svg viewBox="0 0 24 24"><path d="M7 18.5a4.5 4.5 0 0 1-.6-9 6 6 0 0 1 11.5 1.6A3.8 3.8 0 0 1 17.5 18.5z"/><path d="M12 16v-5.5M9.5 12.5L12 10l2.5 2.5"/></svg>';
+ICO.placa = '<svg viewBox="0 0 24 24"><rect x="2.5" y="7" width="19" height="10" rx="1.5"/><path d="M2.5 9.5h19M6 13.5h3M11 13.5h7"/></svg>';
+ICO.camera = '<svg viewBox="0 0 24 24"><path d="M4 8h3l1.5-2.5h7L17 8h3v11H4z"/><circle cx="12" cy="13.5" r="3.5"/></svg>';
+ICO.pdfDoc = '<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M8.5 13h7M8.5 16.5h5"/></svg>';
+// Documentos com vencimento: [id, nome, ícone, campo extra]
+const DOCS = [
+  ['ipva', 'IPVA', '<svg viewBox="0 0 24 24"><path d="M6 2.5h12v19l-3-2-3 2-3-2-3 2z"/><path d="M14.5 7.5c-.5-.8-1.4-1.2-2.5-1.2-1.4 0-2.5.8-2.5 1.9 0 2.6 5 1.4 5 4.1 0 1.1-1.1 1.9-2.5 1.9-1.2 0-2.1-.5-2.6-1.3M12 5v1.3M12 14.2v1.3"/></svg>', 'valor'],
+  ['licenciamento', 'Licenciamento', '<svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="M7 9.5h6M7 13h4"/><path d="M14.5 14.5l1.8 1.8 3.2-3.6"/></svg>', null],
+  ['seguro', 'Seguro', '<svg viewBox="0 0 24 24"><path d="M12 2.5l8 3v6c0 5-3.4 8.6-8 10-4.6-1.4-8-5-8-10v-6z"/><path d="M8.5 12l2.4 2.4 4.6-4.9"/></svg>', 'seguradora'],
+  ['cnh', 'CNH', '<svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><circle cx="8.5" cy="11" r="2.2"/><path d="M5.3 16c.6-1.5 1.7-2.2 3.2-2.2s2.6.7 3.2 2.2M14.5 9.5h4M14.5 12.5h4"/></svg>', null],
+];
+const DOCS_POR_ID = Object.fromEntries(DOCS.map(([k, nome, ico, extra]) => [k, { nome, ico, extra }]));
+// Versões do Lancer de 10ª geração vendidas no Brasil (o 3D de cada uma virá depois; hoje o modelo é o mesmo)
+const VERSOES = ['MT', 'HL', 'HL-T', 'HL-E', 'GT', 'GT AWD'];
+const nomeVersao = (v = D.getEstado().veiculo) => `MITSUBISHI/LANCER ${v.versao || 'GT'} 2.0`;
+// a placa no 3D muda sozinha: Mercosul, antiga cinza (com UF/município) ou preta (30+ anos de fabricação)
+const atualizarPlaca = () => { const v = D.getEstado().veiculo; carro.setPlaca(v.placa, { anoFab: v.anoFab, uf: v.uf, municipio: v.municipio }); };
 const UFS = ['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'];
 // Ícones dos filtros de camadas (simples e característicos de cada sistema)
 const FICO = {
@@ -81,7 +127,7 @@ const urlManual = pagina => {
   const parte = Math.ceil(pagina / PAGINAS_POR_PARTE);
   return `docs/manual-${parte}.pdf#page=${pagina - (parte - 1) * PAGINAS_POR_PARTE}`;
 };
-const VERSAO_APP = 'v5 · painel de instrumentos, abastecimento e ganhos';   // aparece em Configurações (troque junto com VERSAO do sw.js)
+const VERSAO_APP = 'v6.1 · versão na ficha, valores tipo maquininha, placa dianteira';   // aparece em Configurações (troque junto com VERSAO do sw.js)
 const TIPOS = { troca: 'Troca de peça', preventiva: 'Manutenção preventiva', reparo: 'Reparo', inspecao: 'Inspeção', outro: 'Outro' };
 const CORES = [['Prata', '#8d9399'], ['Cinza grafite', '#4a4e54'], ['Preto', '#15161a'], ['Branco', '#e9eaec'], ['Vermelho', '#9b1420'], ['Azul', '#1d3d7a']];
 
@@ -104,15 +150,14 @@ async function iniciar() {
     aoPassar: mostrarRotulo,
   });
   carro.vistas = Object.fromEntries(ZONAS.map(z => [z.id, z.vista]));
-  carro.setPlaca(D.getEstado().veiculo.placa);
+  atualizarPlaca();
   window.lancer = { carro, ui, dados: D };   // acesso pelo console do navegador (depuração)
   aplicarTema();
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', aplicarTema);
   carro.setPersonalizacao(cfg());   // aerofólio e cor das rodas (aplicados quando o modelo terminar de carregar)
   $('#link-manual').href = urlManual(6);
   montarOdometro();
-  $('#luzes-pista').addEventListener('scroll', atualizarSetasLuzes, { passive: true });
-  window.addEventListener('resize', atualizarSetasLuzes);
+  new ResizeObserver(ajustarCluster).observe($('#cluster'));
   await carro.pronto;
   criarPinos();
   $('#pinos').hidden = !cfg().pinos;
@@ -189,49 +234,100 @@ function renderOdoPop() {
 }
 
 // ── Luzes de alerta (como as do painel do carro): vermelho = vencido, âmbar = em breve, cinza = sem registro ──
+// Sem carrossel: se não couberem ao lado do hodômetro, descem para uma linha própria e o painel cresce,
+// para nenhum alerta ficar escondido.
 function renderLuzes() {
   const al = alertas();
+  $('#luzes').style.setProperty('--n', Math.max(1, al.length));
   $('#luzes-pista').innerHTML = al.length ? al.map(l => {
-    const st = l.id === 'km' ? 'proximo' : l.status;
-    const dica = l.id === 'km' ? `${l.nome} (última leitura há ${l.dias > 900 ? 'muito tempo' : l.dias + ' dias'})` : textoLembrete(l);
-    return `<button class="luz luz-${st}" data-acao="alertas" role="listitem" title="${esc(dica)}" aria-label="${esc(dica)}">${l.id === 'km' ? ICO.hodometro : SICO[l.id] || ICO.chave}</button>`;
-  }).join('') : `<button class="luz luz-ok" data-acao="alertas" role="listitem" title="Nenhum alerta: manutenção em dia">${ICO.ok}</button>`;
-  requestAnimationFrame(atualizarSetasLuzes);
+    const dica = `${l.nome}: ${textoAlerta(l)}`;
+    return `<button class="luz luz-${l.status}" data-acao="alertas" role="listitem" title="${esc(dica)}" aria-label="${esc(dica)}">${iconeAlerta(l)}</button>`;
+  }).join('') : `<button class="luz luz-ok" data-acao="alertas" role="listitem" title="Nenhum alerta: tudo em dia">${ICO.ok}</button>`;
+  requestAnimationFrame(ajustarCluster);
 }
-function atualizarSetasLuzes() {
-  const p = $('#luzes-pista'), [a, b] = document.querySelectorAll('[data-luzes]');
-  const sobra = p.scrollWidth > p.clientWidth + 2;
-  a.hidden = b.hidden = !sobra;
-  if (sobra) { a.disabled = p.scrollLeft < 2; b.disabled = p.scrollLeft + p.clientWidth >= p.scrollWidth - 2; }
+// Painel com mais de uma linha: avisa o CSS (separador) e empurra o menu de regiões para baixo
+function ajustarCluster() {
+  const c = $('#cluster'), luzes = $('#luzes');
+  c.classList.toggle('quebrou', luzes.offsetTop > $('#odo-caixa').offsetTop + 8);
+  const extra = Math.max(0, c.offsetHeight - (celular() ? 52 : 56));
+  if (extra !== ajustarCluster.extra) {
+    ajustarCluster.extra = extra;
+    document.documentElement.style.setProperty('--extra-topo', extra + 'px');
+    if (carro?.pronto) ajustarMargem();
+  }
 }
+
+// Ícone, texto, ação e carimbo de cada alerta (manutenção, documento, hodômetro, backup)
+const iconeAlerta = l => ({ lembrete: SICO[l.id], doc: DOCS_POR_ID[l.doc]?.ico, km: ICO.hodometro, backup: ICO.nuvem }[l.tipo] || ICO.chave);
+function textoAlerta(l) {
+  const ha = d => (d > 900 ? 'muito tempo' : d === 1 ? '1 dia' : d + ' dias');
+  switch (l.tipo) {
+    case 'doc': return l.dias < 0 ? `venceu em ${D.dataBR(l.venc)} (há ${ha(-l.dias)})` : l.dias === 0 ? 'vence hoje' : `vence em ${D.dataBR(l.venc)} (em ${ha(l.dias)})`;
+    case 'km': return `última leitura há ${ha(l.dias)} · toque para atualizar`;
+    case 'backup': return l.dias === null ? 'nenhum backup feito ainda' : `último backup há ${ha(l.dias)}`;
+    default: return l.status === 'sem-registro' ? 'sem registro · toque para anotar' : textoLembrete(l).replace(l.nome + ': ', '');
+  }
+}
+const acaoAlerta = l => ({ doc: `data-doc="${l.doc}"`, km: 'data-acao="atualizar-km"', backup: 'data-acao="backup"' }[l.tipo] || `data-servico="${l.id}"`);
+const carimboAlerta = l => ({ km: '<span class="carimbo proximo"><b>Atualizar</b></span>', backup: '<span class="carimbo proximo"><b>Fazer</b></span>' }[l.tipo]
+  || (l.tipo === 'doc' ? carimboDoc(l.status) : carimbo(l.status)));
 
 // Painel de alertas (fora do livro): mesmo visual do hodômetro escolhido, com luzes e carimbos
 function abrirAlertas() {
   fecharMenus();
   const al = alertas(), v = D.getEstado().veiculo, est = cfg().odometro;
-  const cartao = l => {
-    const st = l.id === 'km' ? 'proximo' : l.status;
-    const txt = l.id === 'km' ? `Última leitura há ${l.dias > 900 ? 'muito tempo' : l.dias + ' dias'} · toque para atualizar`
-      : l.status === 'sem-registro' ? 'Sem registro · toque para anotar' : textoLembrete(l).replace(l.nome + ': ', '');
-    return `<button class="pi-item" ${l.id === 'km' ? 'data-acao="atualizar-km"' : `data-servico="${l.id}"`}>
-      <span class="luz luz-${st}">${l.id === 'km' ? ICO.hodometro : SICO[l.id] || ICO.chave}</span>
-      <span class="pi-txt"><b>${esc(l.nome)}</b><small>${esc(txt)}</small></span>${l.id === 'km' ? '<span class="carimbo proximo"><b>Atualizar</b></span>' : carimbo(l.status)}</button>`;
-  };
+  const cartao = l => `<button class="pi-item" ${acaoAlerta(l)}>
+      <span class="luz luz-${l.status}">${iconeAlerta(l)}</span>
+      <span class="pi-txt"><b>${esc(l.nome)}</b><small>${esc(textoAlerta(l))}</small></span>${carimboAlerta(l)}</button>`;
+  const semDocs = DOCS.filter(([k]) => !D.getEstado().documentos[k].venc).length;
   abrirModal(`
     <div class="pi-cab"><div class="pi-tit"><small>Painel de alertas</small><b>${al.length ? `${al.length} aviso${al.length > 1 ? 's' : ''}` : 'Tudo em dia'}</b></div>
       ${htmlOdometro(est, v.km)}<button class="fechar" data-acao="fechar-modal" title="Fechar">${ICO.x}</button></div>
-    <div class="cx-corpo pi-lista">${al.length ? al.map(cartao).join('') : `<div class="pi-ok"><span class="luz luz-ok">${ICO.ok}</span><p>Nenhuma manutenção vencida ou próxima.</p></div>`}</div>
+    <div class="cx-corpo pi-lista">${al.length ? al.map(cartao).join('') : `<div class="pi-ok"><span class="luz luz-ok">${ICO.ok}</span><p>Nenhuma manutenção ou documento vencido ou próximo.</p></div>`}
+      ${semDocs ? `<button class="pi-dica" data-livro="veiculo">${ICO.doc}<span>${semDocs} vencimento${semDocs > 1 ? 's' : ''} de documento sem data (IPVA, licenciamento, seguro, CNH) · toque para cadastrar</span></button>` : ''}</div>
     <div class="cx-rodape"><button class="btn" data-acao="lembretes">Ajustar intervalos</button><button class="btn pri" data-livro="revisoes">Ver revisões</button></div>`,
   false, `painel-instr instr-${est}`);
 }
-// Itens que pedem ação: manutenção vencida/próxima/sem registro e hodômetro desatualizado
+// Itens que pedem ação: manutenção vencida/próxima/sem registro, documentos vencendo, hodômetro desatualizado e backup atrasado
+const diasDesde = data => (data ? Math.round((new Date(D.hoje() + 'T12:00') - new Date(data + 'T12:00')) / 864e5) : null);
 function alertas() {
-  const v = D.getEstado().veiculo, out = D.lembretes().filter(l => ['vencido', 'proximo', 'sem-registro'].includes(l.status));
-  const ordem = { vencido: 0, proximo: 1, 'sem-registro': 3 };
-  out.sort((a, b) => ordem[a.status] - ordem[b.status] || (a.faltaKm ?? 1e9) - (b.faltaKm ?? 1e9));
-  const dias = v.kmData ? Math.round((new Date(D.hoje()) - new Date(v.kmData)) / 864e5) : 999;
-  if (dias > 30) out.splice(out.filter(l => l.status !== 'sem-registro').length, 0, { id: 'km', status: 'proximo', nome: 'Atualizar a quilometragem', dias });
-  return out;
+  const e = D.getEstado(), v = e.veiculo, c = e.config;
+  const out = D.lembretes().filter(l => ['vencido', 'proximo', 'sem-registro'].includes(l.status)).map(l => ({ ...l, tipo: 'lembrete' }))
+    .sort((a, b) => (a.faltaKm ?? 1e9) - (b.faltaKm ?? 1e9));
+  for (const d of statusDocumentos()) if (d.status === 'vencido' || d.status === 'proximo') out.push({ ...d, id: 'doc-' + d.doc, tipo: 'doc' });
+  const diasKm = diasDesde(v.kmData) ?? 999;
+  if (diasKm > 30) out.push({ id: 'km', tipo: 'km', status: 'proximo', nome: 'Atualizar a quilometragem', dias: diasKm });
+  const temDados = e.registros.length + e.abastecimentos.length + e.ganhos.length > 0, diasBk = diasDesde(c.ultimoBackup);
+  if (c.backupDias && temDados && (diasBk === null || diasBk >= c.backupDias)) out.push({ id: 'backup', tipo: 'backup', status: 'proximo', nome: 'Fazer backup', dias: diasBk });
+  const peso = { vencido: 0, proximo: 1, 'sem-registro': 2 };
+  return out.sort((a, b) => peso[a.status] - peso[b.status]);   // sort estável: mantém a ordem dentro de cada cor
+}
+
+// ── Documentos com vencimento (IPVA, licenciamento, seguro, CNH) ──
+function statusDocumentos() {
+  const docs = D.getEstado().documentos;
+  return DOCS.map(([k, nome]) => {
+    const venc = docs[k].venc, dias = venc ? -diasDesde(venc) : null;
+    const status = !venc ? 'sem-data' : dias < 0 ? 'vencido' : dias <= 30 ? 'proximo' : 'ok';
+    return { doc: k, nome, venc, dias, status, ...docs[k] };
+  });
+}
+function carimboDoc(status) {
+  return { ok: '<span class="carimbo ok"><b>Em dia</b></span>', vencido: '<span class="carimbo vencido"><b>Vencido</b></span>',
+    proximo: '<span class="carimbo proximo"><small>Vence em breve</small><b>Atenção</b></span>', 'sem-data': '<span class="carimbo neutro"><b>Cadastrar</b></span>' }[status];
+}
+function modalDocumento(k) {
+  const d = D.getEstado().documentos[k], [, nome, ico, extra] = DOCS.find(x => x[0] === k);
+  abrirModal(`${cab(`${ico} ${nome}`)}
+    <div class="cx-corpo"><div class="form" data-docform="${k}">
+      <label class="${extra ? '' : 'cheio'}">Data de vencimento<input type="date" name="venc" value="${esc(d.venc)}"></label>
+      ${extra === 'valor' ? `<label>Valor (R$, opcional)<input name="valor" inputmode="decimal" value="${d.valor ? fmt(d.valor, 2) : ''}" placeholder="0,00"></label>` : ''}
+      ${extra === 'seguradora' ? `<label>Seguradora (opcional)<input name="seguradora" value="${esc(d.seguradora || '')}" placeholder="Nome da seguradora"></label>` : ''}
+    </div>
+    <p class="aviso-fonte" style="margin-top:10px">O alerta acende em âmbar 30 dias antes e em vermelho depois do vencimento.${k === 'cnh' ? ' A validade da CNH depende da idade: confira a data impressa no documento.' : ''}</p></div>
+    <div class="cx-rodape">${d.venc ? '<button class="btn perigo" data-acao="doc-limpar" style="margin-right:auto">Remover data</button>' : ''}
+      ${d.venc && k !== 'cnh' ? '<button class="btn" data-acao="doc-renovar" title="Avança o vencimento em 1 ano">Renovado (+1 ano)</button>' : ''}
+      <button class="btn pri" data-acao="doc-salvar">Salvar</button></div>`);
 }
 function textoLembrete(l) {
   if (l.status === 'sem-registro') return `${l.nome}: registre a última vez que foi feito`;
@@ -280,7 +376,7 @@ function abrirZona(id) {
 }
 const celular = () => window.innerWidth <= 760;
 function ajustarMargem() {
-  const p = $('#painel'), topo = celular() ? 134 : 124;   // painel superior + menu de regiões
+  const p = $('#painel'), topo = (celular() ? 134 : 124) + (ajustarCluster.extra || 0);   // painel superior + menu de regiões
   document.body.classList.toggle('painel-cheio', !p.hidden && p.classList.contains('cheio'));
   if (p.hidden) return carro.setMargem(0, 0, topo);
   if (celular()) carro.setMargem(0, p.classList.contains('cheio') ? 0 : window.innerHeight * 0.58, topo);
@@ -492,7 +588,10 @@ function arrastarAlca() {
 function abrirModal(html, larga = false, classe = '') {
   const m = $('#modal'); m.innerHTML = `<div class="caixa ${larga ? 'larga' : ''} ${classe}" role="dialog" aria-modal="true">${html}</div>`; m.hidden = false;
 }
-function fecharModal() { $('#modal').hidden = true; $('#modal').innerHTML = ''; }
+function fecharModal() {
+  if ($('#modal [data-form]')) descartarRascunho();   // registro fechado sem salvar
+  $('#modal').hidden = true; $('#modal').innerHTML = '';
+}
 const cab = t => `<div class="cx-cab"><h3>${t}</h3><button class="fechar" data-acao="fechar-modal">${ICO.x}</button></div>`;
 
 function modalPeca(gid, esq, oem, ref) {
@@ -559,6 +658,11 @@ function renderRegistro() {
              <small class="serv-nota">Registro individual deste serviço. Para anotar vários serviços juntos, use “+ Anotar serviço”.</small>`
           : D.lembretes().map(l => `<label><input type="checkbox" data-serv="${l.id}" ${r.servicos.includes(l.id) ? 'checked' : ''}> ${esc(l.nome)}</label>`).join('')}</div>
       <label class="cheio">Observações<textarea name="obs" placeholder="Marca usada, garantia, sintomas…">${esc(r.obs)}</textarea></label>
+      <div class="fotos-form"><label>Fotos e notas fiscais</label>
+        <div class="anexos" data-fotos></div>
+        <label class="btn foto-add">${ICO.camera} Adicionar foto<input type="file" accept="image/*" multiple data-addfoto hidden></label>
+        <small class="serv-nota">Tire uma foto da nota, da peça ou do serviço. As fotos ficam guardadas neste aparelho e entram no backup.</small>
+      </div>
     </div></div>
     <div class="cx-rodape">
       ${novo ? '' : `<button class="btn perigo" data-acao="excluir-registro" style="margin-right:auto">Excluir</button>`}
@@ -581,6 +685,38 @@ function renderRegistro() {
     }
     if (t.matches('[data-addpeca]')) sugerirPecas(t.value);
   });
+  renderFotosForm();
+  f.querySelector('[data-addfoto]').addEventListener('change', async e => {
+    const arqs = [...e.target.files]; e.target.value = '';
+    if (!arqs.length) return;
+    toast(arqs.length > 1 ? `Guardando ${arqs.length} fotos…` : 'Guardando foto…');
+    for (const a of arqs) {
+      try { const id = await Anexos.adicionarFoto(a); (rascunho.anexos ||= []).push(id); (rascunho._novos ||= []).push(id); }
+      catch { toast('Não foi possível guardar a foto'); }
+    }
+    renderFotosForm(); toast('Foto adicionada');
+  });
+}
+// miniaturas do formulário (toque = ampliar; × = remover)
+function renderFotosForm() {
+  const el = $('[data-fotos]'); if (!el) return;
+  el.innerHTML = (rascunho.anexos || []).map(id => `<span class="anexo"><img data-anexo="${id}" data-ver-foto="${id}" alt="Foto anexada">
+    <button type="button" class="anexo-rm" data-rmfoto="${id}" title="Remover foto">×</button></span>`).join('');
+  Anexos.hidratar(el);
+}
+// Fotos novas de um registro que não foi salvo são apagadas; as removidas de um registro salvo, só ao salvar
+function descartarRascunho() {
+  if (!rascunho?._novos?.length) return;
+  Anexos.excluir(rascunho._novos).catch(() => {});
+  delete rascunho._novos;
+}
+// Foto em tela cheia (por cima de qualquer janela)
+function verFoto(id) {
+  const v = document.createElement('div');
+  v.className = 'visor-foto'; v.setAttribute('role', 'dialog'); v.setAttribute('aria-label', 'Foto');
+  v.innerHTML = `<img data-anexo="${id}" alt="Foto anexada"><button class="fechar" title="Fechar">${ICO.x}</button>`;
+  v.addEventListener('click', () => v.remove());
+  document.body.appendChild(v); Anexos.hidratar(v);
 }
 function sugerirPecas(q) {
   const el = $('[data-sugest]'); q = q.trim();
@@ -620,7 +756,7 @@ function abrirBomba(a) {
   fecharMenus();
   const ultimo = c => D.abastecimentosOrdenados().find(x => x.combustivel === c);
   const comb = a?.combustivel || D.abastecimentosOrdenados()[0]?.combustivel || 'gasolina';
-  bomba = a ? { ...a } : { data: D.hoje(), combustivel: comb, total: '', preco: ultimo(comb)?.preco || '', km: '', posto: ultimo(comb)?.posto || '' };
+  bomba = a ? { ...a, cheio: a.cheio !== false } : { data: D.hoje(), combustivel: comb, total: '', preco: ultimo(comb)?.preco || '', km: '', posto: ultimo(comb)?.posto || '', cheio: true };
   renderBomba();
 }
 function renderBomba() {
@@ -640,16 +776,23 @@ function renderBomba() {
       <label>Hodômetro (km)<input data-b="km" type="number" inputmode="numeric" value="${esc(b.km || '')}" placeholder="${esc(D.getEstado().veiculo.km || '')}"></label>
       <label>Data<input data-b="data" type="date" value="${esc(b.data)}"></label>
       <label class="cheio">Posto (opcional)<input data-b="posto" value="${esc(b.posto || '')}" placeholder="Nome do posto" autocomplete="off"></label>
+      <label class="b-cheio cheio"><input type="checkbox" data-bcheio ${b.cheio ? 'checked' : ''}><span><b>Completei o tanque</b><small>Com o tanque cheio e o km informado, o app calcula o consumo (km/L)</small></span></label>
     </div>
+    ${(() => { const c = D.consumo(), ult = b.id && c.porId[b.id];
+      return c.media ? `<div class="b-consumo">${ICO.hodometro}<span>Consumo médio <b>${fmt(c.media, 1)} km/L</b>${ult ? ` · neste abastecimento <b>${fmt(ult, 1)} km/L</b>` : ''}</span></div>` : ''; })()}
     <div class="b-rod">${novo ? '' : `<button class="btn perigo" data-acao="item-excluir" data-item="abast:${b.id}">Excluir</button>`}
       <button class="btn" data-acao="fechar-modal">Cancelar</button><button class="btn pri" data-acao="salvar-bomba">${ICO.ok} Salvar abastecimento</button></div>
   </div>`, false, 'caixa-bomba');
   // o visor calcula os litros enquanto se digita
   $('.bomba').addEventListener('input', e => {
+    if (e.target.matches('[data-bcheio]')) { bomba.cheio = e.target.checked; return; }
     const k = e.target.dataset.b; if (!k) return;
     bomba[k] = k === 'total' || k === 'preco' ? numero(e.target.value) : e.target.value;
     $('[data-b-litros]').textContent = fmt(litrosBomba(), 3);
   });
+  // valores digitados da direita para a esquerda: total em centavos, preço do litro com 3 casas (como no visor da bomba)
+  mascaraMoeda($('[data-b="total"]'), 2);
+  mascaraMoeda($('[data-b="preco"]'), 3);
 }
 const litrosBomba = () => (+bomba.preco > 0 ? +bomba.total / +bomba.preco : 0);
 
@@ -676,6 +819,7 @@ function abrirGanho(g) {
     </div>
     <div class="cx-rodape">${novo ? `<button class="btn" data-livro="ganhos" style="margin-right:auto">Ver lançamentos</button>` : `<button class="btn perigo" data-acao="item-excluir" data-item="ganho:${g.id}" style="margin-right:auto">Excluir</button>`}
       <button class="btn" data-acao="fechar-modal">Cancelar</button><button class="btn pri" data-acao="salvar-ganho">Salvar</button></div>`);
+  mascaraMoeda($('[data-g="valor"]'), 2);   // mesmo jeito de digitar dinheiro da bomba
 }
 
 // ── Central de configurações ──────────────────────────────
@@ -693,13 +837,16 @@ function modalConfig() {
         ${trocaDoc(c.documento)}</div>
       <div class="cfg-linha"><div><b>Pontos sobre o carro</b><small>Marcadores clicáveis de cada zona</small></div>
         ${seg('pinos', [[true, 'Mostrar'], [false, 'Ocultar']])}</div>
-      <div class="secao">Dados</div>
+      <div class="secao">Backup e dados</div>
       <div class="menu-lista">
-        <button data-acao="exportar">${ICO.down}<span>Fazer backup (JSON)</span><small>${D.getEstado().registros.length} registros</small></button>
+        <button data-acao="backup">${ICO.nuvem}<span>Fazer backup agora<br><small style="margin:0">no celular: escolha Google Drive (ou e-mail, WhatsApp…)</small></span><small>${c.ultimoBackup ? 'último: ' + D.dataBR(c.ultimoBackup) : 'nunca feito'}</small></button>
         <button data-acao="importar">${ICO.up}<span>Restaurar backup</span></button>
+        <button data-acao="relatorio">${ICO.pdfDoc}<span>Relatório para revenda (PDF)</span></button>
         <button data-acao="exportar-csv">${ICO.lista}<span>Exportar histórico (planilha CSV)</span></button>
       </div>
-      <p class="aviso-fonte" style="margin-top:10px">Os dados ficam salvos só neste aparelho. Faça backup regularmente.</p>
+      <div class="cfg-linha"><div><b>Lembrete de backup</b><small>Acende uma luz no painel quando passar do prazo</small></div>
+        ${seg('backupDias', [[7, '7 dias'], [15, '15 dias'], [30, '30 dias'], [0, 'Nunca']])}</div>
+      <p class="aviso-fonte" style="margin-top:10px">Os dados ficam salvos só neste aparelho. O backup reúne tudo (inclusive as fotos) num único arquivo; para restaurar, use “Restaurar backup” e escolha esse arquivo.</p>
       <div class="secao">Sobre</div>
       <p class="aviso-fonte"><b>Versão do app: ${VERSAO_APP}</b><br>${VEICULO_BASE.modelo} · ${VEICULO_BASE.versao} · ${VEICULO_BASE.motor}. Catálogo: EPC Mitsubishi (Amayama). Manual do proprietário Lancer 2012.</p>
       ${carro.modeloReal ? `<p class="aviso-fonte">Modelo 3D: “Mitsubishi Lancer Sedan 2009” por <a href="https://sketchfab.com/3d-models/mitsubishi-lancer-sedan-2009-5219adf1a62b4b7393d3c1fc451be88b" target="_blank" rel="noopener">Nieve5677</a> (Sketchfab), licença <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> — simplificado e dividido em peças para este app. Mecânica interna genérica.</p>` : ''}
@@ -711,6 +858,84 @@ function aplicarTema() {
   const escuro = t === 'escuro' || (t === 'sistema' && matchMedia('(prefers-color-scheme: dark)').matches);
   carro?.setFundoEscuro(escuro);
   document.querySelector('meta[name="theme-color"]').content = escuro ? '#121418' : '#1f2d44';
+}
+
+// ── Backup: um arquivo com tudo. No celular abre o "compartilhar" do Android (Google Drive, e-mail, WhatsApp…);
+// no PC (ou se o compartilhamento não existir) o arquivo é baixado. ──
+async function fazerBackup() {
+  toast('Preparando backup…');
+  let blob;
+  try { blob = await D.exportarJSON(); } catch (e) { return toast('Não foi possível gerar o backup'); }
+  const nome = `lancer-garagem-backup-${D.hoje()}`;
+  // o Android só compartilha alguns tipos de arquivo: tenta .json e, se não der, o mesmo conteúdo como .txt
+  const opcoes = [new File([blob], nome + '.json', { type: 'application/json' }), new File([blob], nome + '.txt', { type: 'text/plain' })];
+  const arq = navigator.canShare && opcoes.find(f => { try { return navigator.canShare({ files: [f] }); } catch { return false; } });
+  if (arq && celular()) {
+    try { await navigator.share({ files: [arq], title: 'Backup Lancer Garagem' }); }
+    catch (e) { if (e.name === 'AbortError') return toast('Backup cancelado'); baixar(blob, nome + '.json'); }
+  } else baixar(blob, nome + '.json');
+  D.atualizarConfig({ ultimoBackup: D.hoje() });
+  toast('Backup feito');
+  if ($('#modal .cfg')) modalConfig(); else if ($('#modal .painel-instr')) abrirAlertas();
+}
+
+// ── Relatório para revenda: página de impressão → "Salvar como PDF" do navegador ──
+function modalRelatorio() {
+  fecharMenus();
+  abrirModal(`${cab(`${ICO.pdfDoc} Relatório para revenda`)}
+    <div class="cx-corpo">
+      <p class="aviso-fonte">Gera um documento com os dados do carro, a manutenção programada e todo o histórico de serviços. Na janela de impressão, escolha <b>Salvar como PDF</b>.</p>
+      <div class="servs rel-opcoes">
+        <label><input type="checkbox" data-rel="valores" checked> Mostrar valores pagos</label>
+        <label><input type="checkbox" data-rel="consumo" checked> Mostrar consumo e abastecimentos</label>
+        <label><input type="checkbox" data-rel="dono"> Mostrar nome do proprietário</label>
+        <label><input type="checkbox" data-rel="placa" checked> Mostrar placa e chassi</label>
+      </div>
+    </div>
+    <div class="cx-rodape"><button class="btn" data-acao="fechar-modal">Cancelar</button><button class="btn pri" data-acao="gerar-relatorio">${ICO.pdfDoc} Gerar PDF</button></div>`);
+}
+function gerarRelatorio(op) {
+  const e = D.getEstado(), v = e.veiculo, regs = D.registrosOrdenados().reverse(), cons = D.consumo();
+  const total = regs.reduce((s, r) => s + D.totalRegistro(r), 0), combTotal = e.abastecimentos.reduce((s, a) => s + (+a.total || 0), 0);
+  const linhaDado = (k, x) => x ? `<tr><th>${k}</th><td>${esc(x)}</td></tr>` : '';
+  const ordem = { vencido: 0, proximo: 1, ok: 2, 'sem-registro': 3, 'sem-intervalo': 4 };
+  const rotulo = { vencido: 'Vencido', proximo: 'Vence em breve', ok: 'Em dia', 'sem-registro': 'Sem registro', 'sem-intervalo': 'Intervalo não definido' };
+  const el = document.createElement('div'); el.id = 'relatorio';
+  el.innerHTML = `
+    <header><div><h1>Histórico de manutenção</h1><p>Mitsubishi Lancer ${esc(v.versao || 'GT')} · 2.0 Sedan (CY4A) · motor ${VEICULO_BASE.motor}</p></div>
+      <div class="rel-data">Emitido em ${D.dataBR(D.hoje())}</div></header>
+    <section class="rel-dados"><table>
+      ${op.placa ? linhaDado('Placa', v.placa) + linhaDado('Chassi', v.chassi) : ''}
+      ${linhaDado('Ano fabricação / modelo', [v.anoFab, v.anoModelo].filter(Boolean).join(' / '))}
+      ${linhaDado('Cor', (CORES.find(([, c]) => c === v.cor) || [])[0])}
+      ${linhaDado('Quilometragem atual', `${D.km(v.km)}${v.kmData ? ' (leitura de ' + D.dataBR(v.kmData) + ')' : ''}`)}
+      ${op.dono ? linhaDado('Proprietário', v.proprietario) : ''}
+    </table>
+    <div class="rel-resumo"><div><b>${regs.length}</b><span>serviços registrados</span></div>
+      ${regs.length ? `<div><b>${D.dataBR(regs[0].data)}</b><span>primeiro registro</span></div>` : ''}
+      ${op.valores ? `<div><b>${D.brl(total)}</b><span>investido em manutenção</span></div>` : ''}
+      ${op.consumo && cons.media ? `<div><b>${fmt(cons.media, 1)} km/L</b><span>consumo médio medido</span></div>` : ''}</div></section>
+    <h2>Manutenção programada</h2>
+    <table class="rel-tab"><thead><tr><th>Item</th><th>Intervalo</th><th>Última vez</th><th>Situação</th></tr></thead><tbody>
+      ${D.lembretes().sort((a, b) => ordem[a.status] - ordem[b.status]).map(l => `<tr><td>${esc(l.nome)}</td>
+        <td>${[l.km ? D.km(l.km) : '', l.meses ? l.meses + ' meses' : ''].filter(Boolean).join(' ou ') || '—'}</td>
+        <td>${l.ultimo ? `${D.dataBR(l.ultimo.data)} · ${D.km(l.ultimo.km)}` : '—'}</td><td class="rel-${l.status}">${rotulo[l.status]}</td></tr>`).join('')}
+    </tbody></table>
+    <h2>Serviços realizados</h2>
+    ${regs.length ? `<table class="rel-tab"><thead><tr><th>Data</th><th>Km</th><th>Serviço</th><th>Peças (nº original)</th><th>Oficina</th>${op.valores ? '<th class="num">Valor</th>' : ''}</tr></thead><tbody>
+      ${regs.map(r => `<tr><td>${D.dataBR(r.data)}</td><td class="num">${(+r.km || 0).toLocaleString('pt-BR')}</td>
+        <td><b>${esc(r.titulo || TIPOS[r.tipo])}</b><br><small>${esc(ZONA_POR_ID[r.zona]?.nome || '')}${(r.anexos || []).length ? ' · com foto/nota' : ''}</small></td>
+        <td><small>${(r.pecas || []).map(p => esc(`${p.oem || ''} ${p.desc || ''}`.trim())).join('<br>') || '—'}</small></td><td>${esc(r.oficina || '—')}</td>
+        ${op.valores ? `<td class="num">${D.brl(D.totalRegistro(r))}</td>` : ''}</tr>`).join('')}
+    </tbody>${op.valores ? `<tfoot><tr><td colspan="5">Total</td><td class="num">${D.brl(total)}</td></tr></tfoot>` : ''}</table>` : '<p>Nenhum serviço registrado.</p>'}
+    ${op.consumo && e.abastecimentos.length ? `<h2>Abastecimentos</h2><p>${e.abastecimentos.length} abastecimentos registrados${op.valores ? ` · ${D.brl(combTotal)}` : ''}${cons.media ? ` · consumo médio ${fmt(cons.media, 1)} km/L em ${D.km(cons.kmRodados)} medidos` : ''}.</p>` : ''}
+    <footer>Gerado pelo app Lancer Garagem a partir dos registros feitos pelo proprietário. Não é documento oficial; notas fiscais e fotos ficam com o proprietário.</footer>`;
+  document.getElementById('relatorio')?.remove();
+  document.body.appendChild(el);
+  document.body.classList.add('imprimindo');
+  const limpar = () => { document.body.classList.remove('imprimindo'); el.remove(); window.removeEventListener('afterprint', limpar); };
+  window.addEventListener('afterprint', limpar);
+  setTimeout(() => window.print(), 100);
 }
 
 function modalLembretes() {
@@ -776,6 +1001,8 @@ function renderPerso() {
     <div class="perso-cab"><b>Personalizar</b><small>Muda só o carro 3D</small></div>
     <div class="perso-linha"><span>${ICO.aerofolio}Aerofólio</span>
       <div class="seg cfg-seg">${[[true, 'Com'], [false, 'Sem']].map(([v, t]) => `<button data-cfg="aerofolio:${v}" class="${c.aerofolio === v ? 'ativo' : ''}">${t}</button>`).join('')}</div></div>
+    <div class="perso-linha"><span>${ICO.placa}Placa dianteira</span>
+      <div class="seg cfg-seg">${[['original', 'Original'], ['lado', 'Lado']].map(([v, t]) => `<button data-cfg="placaDianteira:${v}" class="${c.placaDianteira === v ? 'ativo' : ''}" title="${v === 'lado' ? 'Lado do motorista, entre o farol e o farol de neblina (estilo Evo)' : 'Centro do para-choque'}">${t}</button>`).join('')}</div></div>
     <div class="perso-linha col"><span>${ICO.roda}Cor das rodas</span>
       <div class="cores">${CORES_RODAS.map(([v, n, amostra]) => `<button type="button" title="${n}" aria-label="${n}" data-cfg="corRodas:${v ?? 'null'}" class="${(c.corRodas ?? null) === v ? 'ativo' : ''}" style="background:${amostra || v}"></button>`).join('')}</div></div>
     <button class="perso-mais" data-acao="perso-mais" aria-disabled="true">${ICO.cadeado}<span>Personalizar mais peças</span><small>em breve</small></button>`;
@@ -923,12 +1150,13 @@ function noPeriodo(data, periodo) {
 }
 // manutenções e abastecimentos no mesmo formato
 function itensDespesa() {
-  const e = D.getEstado();
+  const e = D.getEstado(), kml = D.consumo().porId;
   return [
     ...e.registros.map(r => ({ tipo: 'reg', id: r.id, data: r.data, valor: D.totalRegistro(r), km: +r.km || 0, mao: +r.maoDeObra || 0,
       titulo: r.titulo || TIPOS[r.tipo], sub: `${ZONA_POR_ID[r.zona]?.nome || ''} · ${TIPOS[r.tipo] || ''}` })),
     ...e.abastecimentos.map(a => ({ tipo: 'abast', id: a.id, data: a.data, valor: +a.total || 0, km: +a.km || 0, comb: a.combustivel,
-      titulo: `Abastecimento · ${COMB_POR_ID[a.combustivel]?.nome || a.combustivel}`, sub: `${fmt(a.litros, 2)} L · R$ ${fmt(a.preco, 3)}/L${a.posto ? ' · ' + a.posto : ''}` })),
+      titulo: `Abastecimento · ${COMB_POR_ID[a.combustivel]?.nome || a.combustivel}`,
+      sub: `${fmt(a.litros, 2)} L · R$ ${fmt(a.preco, 3)}/L${kml[a.id] ? ` · ${fmt(kml[a.id], 1)} km/L` : ''}${a.cheio === false ? ' · parcial' : ''}${a.posto ? ' · ' + a.posto : ''}` })),
   ];
 }
 function despesasFiltradas() {
@@ -1003,8 +1231,10 @@ function modalDetalheRegistro(r) {
       ${(r.pecas || []).length || +r.maoDeObra ? `<div class="reg" style="margin-top:0"><ul style="margin:0">${(r.pecas || []).map(p => `<li><span><span class="mono">${esc(p.oem || '—')}</span> ${esc(p.desc || '')} ×${p.qtd || 1}</span><span>${D.brl((+p.preco || 0) * (+p.qtd || 1))}</span></li>`).join('')}
         ${+r.maoDeObra ? `<li><span>Mão de obra</span><span>${D.brl(r.maoDeObra)}</span></li>` : ''}<li><b>Total</b><b>${D.brl(D.totalRegistro(r))}</b></li></ul></div>` : '<div class="p-sub">Sem peças ou valores anotados.</div>'}
       ${r.obs ? `<div class="secao">Observações</div><div class="p-sub" style="white-space:pre-wrap;color:var(--txt)">${esc(r.obs)}</div>` : ''}
+      ${(r.anexos || []).length ? `<div class="secao">Fotos e notas fiscais</div><div class="anexos">${r.anexos.map(id => `<span class="anexo"><img data-anexo="${id}" data-ver-foto="${id}" alt="Foto anexada"></span>`).join('')}</div>` : ''}
     </div>
     <div class="cx-rodape"><button class="btn perigo" data-acao="item-excluir" data-item="reg:${r.id}" style="margin-right:auto">Excluir</button><button class="btn" data-acao="fechar-modal">Fechar</button><button class="btn pri" data-editar="${r.id}">Editar</button></div>`);
+  Anexos.hidratar($('#modal'));
 }
 // Balão temporário sobre um campo (ex.: data da leitura do hodômetro)
 function mostrarBalao(el, texto, abaixo = false) {
@@ -1042,11 +1272,11 @@ const conteudoLivro = {
     return {
       titulo: 'Histórico', sub: regs.length ? `${regs.length} serviço${regs.length > 1 ? 's' : ''} · toque no ano para abrir ou fechar · toque num serviço para ver, editar ou excluir` : 'Linha do tempo por ano',
       itens, vazio: '<div class="mao-vazio">Nenhum serviço anotado ainda.<br>Comece pela última troca de óleo!</div>',
-      acoes: `<button class="pri" data-acao="novo-registro">+ Anotar serviço</button>`,
+      acoes: `${regs.length ? '<button data-acao="relatorio">Relatório PDF</button>' : ''}<button class="pri" data-acao="novo-registro">+ Anotar serviço</button>`,
     };
   },
   despesas() {
-    const d = ui.livro.desp, itens = despesasFiltradas();
+    const d = ui.livro.desp, itens = despesasFiltradas(), cons = D.consumo();
     const soma = f => itens.filter(f).reduce((s, x) => s + x.valor, 0);
     const total = soma(() => true), comb = soma(x => x.tipo === 'abast'), mao = itens.reduce((s, x) => s + (x.mao || 0), 0), pecas = total - comb - mao;
     const kms = itens.map(x => x.km).filter(Boolean), rodado = kms.length > 1 ? Math.max(...kms) - Math.min(...kms) : 0;
@@ -1059,6 +1289,7 @@ const conteudoLivro = {
       topo: `<div class="l-resumo">
         <div><b>${D.brl(total)}</b><small>${itens.length} lançamento${itens.length === 1 ? '' : 's'}</small></div>
         <div><b>${rodado ? D.brl(total / rodado) : '—'}</b><small>custo por km</small></div>
+        <div><b>${cons.media ? fmt(cons.media, 1) + ' km/L' : '—'}</b><small>${cons.media ? `consumo médio · ${D.brl(cons.custoKm)}/km` : 'consumo: complete o tanque 2× com km'}</small></div>
         <div class="l-barra"><span><i class="pecas" style="width:${pct(pecas)}%"></i><i class="mao" style="width:${pct(mao)}%"></i><i class="comb" style="width:${pct(comb)}%"></i></span>
           <small><i class="pecas"></i>peças ${D.brl(pecas)} · <i class="mao"></i>mão de obra ${D.brl(mao)} · <i class="comb"></i>combustível ${D.brl(comb)}</small></div></div>`,
       itens: itens.map(x => `<button class="l-desp ${x.tipo === 'abast' ? 'abast' : ''}" data-item="${x.tipo}:${x.id}" aria-haspopup="menu" ${x.comb ? `style="--cor:${COMB_POR_ID[x.comb]?.cor}"` : ''}>
@@ -1092,17 +1323,19 @@ const conteudoLivro = {
   veiculo() {
     const v = D.getEstado().veiculo, ed = ui.livro.editando, estilo = cfg().documento;
     const corNome = (CORES.find(([, c]) => c === (ui.livro.cor || v.cor)) || ['—'])[0];
-    // opcoes = lista de seleção (ex.: UF); balao = texto mostrado ao tocar no campo fora da edição
-    const campo = (rot, nome, { cls = '', valor, ph = '', tipo = 'text', opcoes, balao } = {}) => {
+    // opcoes = lista de seleção (ex.: UF), cada uma 'valor' ou ['valor', 'texto']; vazio = sem a opção "—"
+    // balao = texto mostrado ao tocar no campo fora da edição
+    const campo = (rot, nome, { cls = '', valor, ph = '', tipo = 'text', opcoes, balao, vazio = true } = {}) => {
       if (ed && nome) {
-        const ctl = opcoes ? `<select name="${nome}"><option value="">—</option>${opcoes.map(o => `<option ${o === v[nome] ? 'selected' : ''}>${o}</option>`).join('')}</select>`
+        const ctl = opcoes ? `<select name="${nome}">${vazio ? '<option value="">—</option>' : ''}${opcoes.map(o => { const [val, txt] = [].concat(o, o).slice(0, 2);
+          return `<option value="${esc(val)}" ${val === v[nome] ? 'selected' : ''}>${esc(txt)}</option>`; }).join('')}</select>`
           : `<input name="${nome}" type="${tipo}" value="${esc(v[nome] ?? '')}" placeholder="${ph}" autocomplete="off" ${tipo === 'number' ? 'inputmode="numeric"' : ''}>`;
         return `<label class="d-campo ${cls}"><span class="d-rot">${rot}</span>${ctl}</label>`;
       }
       return `<div class="d-campo ${cls}" ${balao ? `data-balao="${esc(balao)}" role="button" tabindex="0"` : ''}><span class="d-rot">${rot}</span><span class="d-val">${esc(valor ?? (v[nome] || '—'))}</span></div>`;
     };
     return {
-      titulo: 'Veículo', sub: `${VEICULO_BASE.modelo} · ${VEICULO_BASE.versao}`,
+      titulo: 'Veículo', sub: `Mitsubishi Lancer ${v.versao || 'GT'} · 2.0 Sedan (CY4A)`,
       ferramentas: trocaDoc(estilo),
       corpo: `<div class="doc doc-${estilo} ${ed ? 'editando' : ''}" data-doc>
         <div class="d-topo"><div><b>Ficha do veículo</b><small>Visual inspirado no CRLV · sem valor de documento</small></div><img src="icones/icone-192.png" alt=""></div>
@@ -1115,7 +1348,7 @@ const conteudoLivro = {
           ${campo('Nome', 'proprietario', { cls: 'largo', ph: 'Proprietário (opcional)' })}
           ${campo('Categoria', 'categoria')}
           ${campo('Chassi', 'chassi', { cls: 'largo mono', ph: '17 caracteres' })}
-          ${campo('Marca / Modelo / Versão', null, { cls: 'largo', valor: 'MITSUBISHI/LANCER GT 2.0 CY4A' })}
+          ${campo('Marca / Modelo / Versão', 'versao', { cls: 'largo', valor: nomeVersao(v), vazio: false, opcoes: VERSOES.map(x => [x, nomeVersao({ versao: x })]) })}
           ${campo('Espécie / Tipo', null, { valor: 'PASSAGEIRO / AUTOMÓVEL' })}
           ${campo('Combustível', 'combustivel')}
           ${campo('Cor predominante', null, { valor: corNome })}
@@ -1129,6 +1362,12 @@ const conteudoLivro = {
           ${campo('Produção (aaaa.mm)', 'producao', { ph: '2012.05', valor: v.producao || '—' })}
           <div class="d-campo"><span class="d-rot">Cor no 3D</span><div class="cores">${CORES.map(([n, c]) => `<button type="button" title="${n}" ${ed ? `data-cor="${c}"` : 'disabled'} class="${(ui.livro.cor || v.cor) === c ? 'ativo' : ''}" style="background:${c}"></button>`).join('')}</div></div>
         </div>
+      </div>
+      <div class="venc"><div class="venc-tit">Vencimentos <small>acendem no painel de alertas 30 dias antes</small></div>
+        ${statusDocumentos().map(d => `<button class="l-card venc-card st-borda-${d.status}" data-doc="${d.doc}">
+          <span class="l-ico">${DOCS_POR_ID[d.doc].ico}</span>
+          <span class="l-txt"><b>${d.nome}</b><small>${!d.venc ? 'toque para cadastrar o vencimento' : d.status === 'ok' ? `vence em ${D.dataBR(d.venc)}` : textoAlerta({ ...d, tipo: 'doc' })}${d.seguradora ? ' · ' + esc(d.seguradora) : ''}${d.valor ? ' · ' + D.brl(d.valor) : ''}</small></span>
+          ${carimboDoc(d.status)}</button>`).join('')}
       </div>`,
       acoes: ed ? `<button data-acao="cancelar-veiculo">Cancelar</button><button class="pri" data-acao="salvar-veiculo">Salvar</button>`
         : `<button class="pri" data-acao="editar-veiculo">Editar dados</button>`,
@@ -1159,7 +1398,7 @@ function onClique(e) {
   // clique fora dos menus suspensos fecha-os
   if (!e.target.closest('#veic, #filtro, #odo-caixa') && menuAberto()) fecharMenus();
   if ($('#menu-reg') && !e.target.closest('#menu-reg') && !e.target.closest('[data-item]')) fecharMenuRegistro();
-  const t = e.target.closest('[data-passo],[data-acao],[data-aba],[data-grupo],[data-esq],[data-peca],[data-filtro],[data-livro],[data-item],[data-ano],[data-balao],[data-cfg],[data-bico],[data-luzes],[data-pino],[data-zona],[data-editar],[data-trocar],[data-servico],[data-copiar],[data-rmpeca],[data-sugpeca],[data-cor],[data-sec]');
+  const t = e.target.closest('[data-passo],[data-acao],[data-aba],[data-grupo],[data-esq],[data-peca],[data-filtro],[data-livro],[data-item],[data-ano],[data-balao],[data-cfg],[data-bico],[data-doc],[data-ver-foto],[data-rmfoto],[data-pino],[data-zona],[data-editar],[data-trocar],[data-servico],[data-copiar],[data-rmpeca],[data-sugpeca],[data-cor],[data-sec]');
   if (!t) {
     if (e.target.id === 'modal') fecharModal();
     else if (e.target.id === 'livrete') fecharLivrete();   // toque fora do caderno
@@ -1173,11 +1412,11 @@ function onClique(e) {
   if (ds.ano) { const a = ui.livro.anos; a.has(ds.ano) ? a.delete(ds.ano) : a.add(ds.ano); return renderLivrete(); }
   if (ds.balao) return mostrarBalao(t, ds.balao);
   if (ds.cfg) {
-    const [k, v] = ds.cfg.split(':'), val = v === 'true' ? true : v === 'false' ? false : v === 'null' ? null : v;
+    const [k, v] = ds.cfg.split(':'), val = v === 'true' ? true : v === 'false' ? false : v === 'null' ? null : /^\d+$/.test(v) ? +v : v;
     D.atualizarConfig({ [k]: val });
     if (k === 'tema') aplicarTema();
     if (k === 'pinos') $('#pinos').hidden = !val;
-    if (k === 'aerofolio' || k === 'corRodas') { carro.setPersonalizacao(cfg()); renderPerso(); }
+    if (['aerofolio', 'corRodas', 'placaDianteira'].includes(k)) { carro.setPersonalizacao(cfg()); renderPerso(); }
     if ($('#modal .cfg')) modalConfig();
     if ($('#modal .painel-instr')) abrirAlertas();
     return;
@@ -1187,7 +1426,15 @@ function onClique(e) {
     if (bomba.combustivel !== ds.bico && ult && !bomba.id) { bomba.preco = ult.preco; bomba.posto ||= ult.posto || ''; }
     bomba.combustivel = ds.bico; return renderBomba();
   }
-  if (ds.luzes) { const p = $('#luzes-pista'); return p.scrollBy({ left: +ds.luzes * Math.max(60, p.clientWidth * 0.8), behavior: 'smooth' }); }
+  if (ds.doc) return modalDocumento(ds.doc);
+  if (ds.verFoto) return verFoto(ds.verFoto);
+  if (ds.rmfoto) {
+    const id = ds.rmfoto;
+    rascunho.anexos = rascunho.anexos.filter(x => x !== id);
+    if (rascunho._novos?.includes(id)) { Anexos.excluir(id).catch(() => {}); rascunho._novos = rascunho._novos.filter(x => x !== id); }
+    else (rascunho._removidos ||= []).push(id);   // foto já salva: só some de vez quando o registro for salvo
+    return renderFotosForm();
+  }
   if (ds.pino) return carro.selecionar(ds.pino, true);
   if (ds.zona) { fecharModal(); return carro.selecionar(ds.zona, true); }
   if (ds.aba) { ui.aba = ds.aba; ui.grupo = null; return renderPainel(); }
@@ -1221,6 +1468,21 @@ function onClique(e) {
     case 'cancelar-veiculo': cancelarEdicaoVeiculo(); return renderLivrete();
     case 'atualizar-km': return modalKm();
     case 'alertas': return abrirAlertas();
+    case 'backup': case 'exportar': return fazerBackup();
+    case 'relatorio': return modalRelatorio();
+    case 'gerar-relatorio': {
+      const op = Object.fromEntries([...document.querySelectorAll('[data-rel]')].map(i => [i.dataset.rel, i.checked]));
+      fecharModal(); return gerarRelatorio(op);
+    }
+    case 'doc-salvar': case 'doc-renovar': case 'doc-limpar': {
+      const f = $('[data-docform]'), k = f.dataset.docform, campos = {};
+      f.querySelectorAll('input[name]').forEach(i => { campos[i.name] = i.name === 'valor' ? (numero(i.value) || '') : i.value.trim(); });
+      if (ds.acao === 'doc-limpar') campos.venc = '';
+      if (ds.acao === 'doc-renovar') { const d = new Date(campos.venc + 'T12:00'); d.setFullYear(d.getFullYear() + 1); campos.venc = isoData(d); }
+      if (ds.acao === 'doc-salvar' && !campos.venc) return toast('Informe a data de vencimento');
+      D.atualizarDocumento(k, campos); fecharModal();
+      return toast(ds.acao === 'doc-renovar' ? `Renovado até ${D.dataBR(campos.venc)}` : ds.acao === 'doc-limpar' ? 'Data removida' : 'Vencimento salvo');
+    }
     case 'personalizar': return alternarMenu('perso');
     case 'perso-mais': return mostrarBalao(t, 'Disponível em breve');
     case 'salvar-odo': {
@@ -1275,8 +1537,11 @@ function onClique(e) {
       if (!rascunho.titulo) rascunho.titulo = rascunho.pecas[0]?.desc ? 'Troca: ' + rascunho.pecas[0].desc : TIPOS[rascunho.tipo];
       rascunho.pecas = rascunho.pecas.filter(p => p.oem || p.desc);
       if (rascunho.servicoFixo) rascunho.servicos = [rascunho.servicoFixo];
-      delete rascunho.servicoFixo;
+      const removidas = rascunho._removidos || [];
+      delete rascunho.servicoFixo; delete rascunho._novos; delete rascunho._removidos;
+      if (!rascunho.anexos?.length) delete rascunho.anexos;
       D.salvarRegistro(rascunho); fecharModal(); toast('Registro salvo');
+      if (removidas.length) Anexos.excluir(removidas).catch(() => {});
       if (ui.zona === rascunho.zona) { ui.aba = 'historico'; renderPainel(); }
       return;
     }
@@ -1290,19 +1555,18 @@ function onClique(e) {
       for (const k of ['placa', 'chassi', 'combustivel', 'categoria', 'uf', 'motorNum']) if (dados[k]) dados[k] = dados[k].toUpperCase();
       if (ui.livro.cor) dados.cor = ui.livro.cor;
       ui.livro.cor = null; ui.livro.editando = false;
-      D.atualizarVeiculo(dados); carro.setPlaca(dados.placa); toast('Veículo atualizado'); return;
+      D.atualizarVeiculo(dados); atualizarPlaca(); toast('Veículo atualizado'); return;
     }
     case 'lembretes': return modalLembretes();
     case 'salvar-lembretes':
       document.querySelectorAll('[data-lkm]').forEach(i => D.ajustarLembrete(i.dataset.lkm, +i.value || null, +$(`[data-lmes="${i.dataset.lkm}"]`).value || null));
       toast('Intervalos salvos'); return modalLembretes();
     case 'catalogo': fecharMenus(); return modalCatalogo();
-    case 'exportar': baixar(D.exportarJSON(), `lancer-garagem-backup-${D.hoje()}.json`); return toast('Backup gerado');
     case 'exportar-csv': return baixar(D.exportarCSV(), `lancer-historico-${D.hoje()}.csv`);
     case 'importar': {
-      const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json,application/json';
+      const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json,.txt,application/json,text/plain';
       inp.onchange = async () => {
-        try { const txt = await inp.files[0].text(); if (!confirm('Substituir os dados atuais pelos do backup?')) return; D.importarJSON(txt); carro.setCor(D.getEstado().veiculo.cor); carro.setPlaca(D.getEstado().veiculo.placa); carro.setPersonalizacao(cfg()); aplicarTema(); $('#pinos').hidden = !cfg().pinos; fecharModal(); toast('Backup restaurado'); }
+        try { const txt = await inp.files[0].text(); if (!confirm('Substituir os dados atuais pelos do backup?')) return; toast('Restaurando…'); await D.importarJSON(txt); carro.setCor(D.getEstado().veiculo.cor); atualizarPlaca(); carro.setPersonalizacao(cfg()); aplicarTema(); $('#pinos').hidden = !cfg().pinos; fecharModal(); toast('Backup restaurado'); }
         catch (err) { toast(err.message); }
       };
       return inp.click();
