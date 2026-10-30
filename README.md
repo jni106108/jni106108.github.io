@@ -44,6 +44,14 @@ Nenhum arquivo desta pasta passa de 25 MB (o maior é `modelo/lancer.glb`, com 1
   - **Bomba**: registra um abastecimento numa tela com visual de bomba. Você digita o total e o preço do litro no visor, os litros são calculados, e os bicos escolhem o combustível (verde = etanol, amarelo = gasolina comum, vermelho = premium). Também dá para informar km, data e posto.
   - **Luzes de alerta**: vermelha = vencido, âmbar = vence em breve ou km desatualizado, cinza = sem registro. Se não couberem, rolam para os lados com as setas. Tocar abre o painel de alertas.
 - **Barra inferior**: filtro, catálogo de peças, manual do proprietário e personalização (com ou sem aerofólio, cor das rodas; "mais peças" em breve).
+- **Consumo (km/L)**: marque "Completei o tanque" e informe o km ao abastecer. Entre dois tanques cheios, o app divide os km rodados pelos litros colocados (abastecimentos parciais no meio só somam litros). Aparece na bomba e em Despesas, com o custo do combustível por km.
+- **Fotos e notas fiscais** nos registros de serviço: ficam no próprio aparelho (IndexedDB, `js/anexos.js`), reduzidas para cerca de 1600 px, e entram no backup.
+- **Vencimentos** (aba Veículo do livro): IPVA, licenciamento, seguro e CNH. Acendem no painel 30 dias antes (âmbar) e depois de vencidos (vermelho). O painel superior cresce em linhas quando há muitas luzes, para nenhum alerta ficar escondido.
+- **Backup**: Configurações → "Fazer backup agora". No celular abre o compartilhamento do Android (escolha Google Drive, e-mail…); no PC baixa o arquivo. Uma luz lembra de refazer o backup a cada 7, 15 ou 30 dias. Para backup automático direto no Google Drive, sem tocar em nada, seria preciso criar um projeto no Google Cloud (credencial OAuth); fica para uma próxima versão.
+- **Relatório para revenda (PDF)**: Configurações ou aba Histórico. Abre a impressão do navegador; escolha "Salvar como PDF". Dá para ocultar valores, placa/chassi e o nome do proprietário.
+- **Versão do carro**: no campo "Marca / Modelo / Versão" da ficha (lista com MT, HL, HL-T, HL-E, GT, GT AWD). Por enquanto o 3D é o mesmo para todas.
+- **Valores em dinheiro** (bomba e ganhos) são digitados da direita para a esquerda, como na maquininha: 5-0-0-0 = R$ 50,00. O preço do litro tem 3 casas, como no visor da bomba (5-8-9-9 = R$ 5,899).
+- **Placa no 3D**: Personalizar → "Placa dianteira" Original (centro) ou Lado (lado do motorista, entre o farol e o farol de neblina, como no Evo). O modelo da placa é automático: ABC1D23 = Mercosul; ABC1234 = antiga cinza (com UF e município da ficha); carro com 30 anos ou mais de fabricação = placa preta.
 - **Ganhos como motorista de app** (menu do veículo): data inicial, data final e valor. A aba Ganhos do livro mostra os períodos e o saldo (ganhos − gastos com o carro).
 
 ### Navegação
