@@ -535,19 +535,36 @@ body.filtro-aberto .dica { display: none; }
 .cat-sec .cat-gr button { width: 100%; display: flex; gap: 10px; border: 0; background: none; padding: 8px 12px; border-bottom: 1px solid var(--borda); text-align: left; font-size: 13px; }
 
 .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 70; background: #1c1f23; color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 13px; box-shadow: var(--sombra); }
-.carregando { position: fixed; inset: 0; display: grid; place-items: center; z-index: 80; background: var(--bg2); color: var(--txt2); font-weight: 600; transition: opacity .4s; padding: 20px; }
-.carr-caixa { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; width: min(340px, 100%); }
-.carr-caixa img { border-radius: 16px; box-shadow: var(--sombra); }
-.carr-caixa b { font-size: 18px; color: var(--txt); }
-.carr-caixa span { font-size: 13px; }
-.carr-barra { width: 100%; height: 6px; border-radius: 3px; background: var(--borda); overflow: hidden; }
-.carr-barra i { display: block; height: 100%; width: 4%; background: var(--acento); border-radius: 3px; transition: width .3s; }
+/* tela de abertura: sempre escura (identidade Lancer Club 67), escudo com brilho e barra em degradê vermelho→laranja */
+.carregando { position: fixed; inset: 0; display: grid; place-items: center; z-index: 80; color: #9aa3ad; font-weight: 600; transition: opacity .4s; padding: 20px;
+  background: radial-gradient(90% 60% at 50% 42%, #2a2e34, #16191d 60%, #0e1013); }
+.carr-caixa { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; width: min(320px, 100%); }
+/* o recorte do escudo vem com fundo: a máscara esmaece as bordas para ele se fundir à tela */
+.carr-logo { width: 170px; height: auto; -webkit-mask-image: radial-gradient(closest-side, #000 72%, transparent); mask-image: radial-gradient(closest-side, #000 72%, transparent);
+  animation: pulsa 2.4s ease-in-out infinite; }
+@keyframes pulsa { 50% { filter: brightness(1.12) drop-shadow(0 0 18px rgba(240, 110, 30, .35)); } }
+.carr-caixa b { font: italic 800 20px Inter, sans-serif; letter-spacing: .04em; color: #f3f4f6; text-transform: uppercase; }
+.carr-caixa span { font-size: 12.5px; }
+.carr-barra { width: 70%; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+.carr-barra i { display: block; height: 100%; width: 4%; background: linear-gradient(90deg, #c72a1f, #f07c1f); border-radius: 3px; transition: width .3s; }
 .carr-erro { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; font-weight: 500; }
-.carr-erro p { margin: 0; color: var(--txt); font-size: 13px; }
+.carr-erro p { margin: 0; color: #f3f4f6; font-size: 13px; }
 .carr-erro div { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-.carr-erro button { border: 0; border-radius: 10px; padding: 10px 14px; font-weight: 700; background: var(--sup); color: var(--txt); box-shadow: var(--sombra); }
-.carr-erro button[data-x="recarregar"] { background: var(--acento); color: #fff; }
-.carr-erro small { color: var(--txt3); }
+.carr-erro button { border: 0; border-radius: 10px; padding: 10px 14px; font-weight: 700; background: #2a2e34; color: #f3f4f6; }
+.carr-erro button[data-x="recarregar"] { background: linear-gradient(90deg, #c72a1f, #f07c1f); color: #fff; }
+.carr-erro small { color: #7c858f; }
+/* novidades da versão */
+.novidades { display: flex; flex-direction: column; gap: 10px; }
+.nov-versao { border: 1px solid var(--borda); border-radius: 14px; padding: 12px 14px; }
+.nov-versao.atual { border-color: transparent; background: linear-gradient(var(--sup), var(--sup)) padding-box, linear-gradient(90deg, #c72a1f, #f07c1f) border-box; border: 2px solid transparent; }
+.nov-cab { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.nov-cab b { font: italic 800 17px Inter, sans-serif; }
+.nov-cab small { color: var(--txt3); font-size: 12px; }
+.nov-cab .novo { background: linear-gradient(90deg, #c72a1f, #f07c1f); color: #fff; font: 800 10px Inter, sans-serif; letter-spacing: .1em; padding: 2px 7px; border-radius: 999px; text-transform: uppercase; }
+.nov-versao > p { margin: 4px 0 6px; color: var(--txt2); font-size: 13px; }
+.nov-versao ul { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.45; }
+.nov-versao li + li { margin-top: 3px; }
+.nov-versao details summary { cursor: pointer; color: var(--acento); font-size: 12.5px; font-weight: 600; }
 .carregando.some { opacity: 0; pointer-events: none; }
 
 /* ── Livro: aba Ganhos, despesas com combustível, troca do visual do documento ── */
