@@ -56,7 +56,7 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 /* painel superior no visual de painel de instrumentos (sempre escuro, como o do carro):
    menu do veículo · hodômetro · bomba (abastecimento) · luzes de alerta */
 .cluster { --vidro: #0b1119; --brilho: #dff1ff; --luz-borda: rgba(120, 170, 255, .2);
-  position: relative; flex: 1; min-width: 0; max-width: 620px; height: 56px; display: flex; align-items: center; gap: 6px; padding: 5px 8px 5px 5px; border-radius: 18px; color: var(--brilho);
+  position: relative; flex: 1; min-width: 0; max-width: 620px; min-height: 56px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; padding: 5px 8px 5px 5px; border-radius: 18px; color: var(--brilho);
   background: linear-gradient(180deg, #172131, var(--vidro) 70%); border: 1px solid var(--luz-borda);
   box-shadow: 0 10px 30px rgba(0, 0, 0, .3), inset 0 1px 0 rgba(255, 255, 255, .07); }
 .cluster.classico { --vidro: #050505; --brilho: #fff6e2; --luz-borda: #8e949b;
@@ -90,20 +90,18 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .bomba-btn { flex: none; width: 40px; height: 40px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, .14); background: rgba(255, 255, 255, .06); color: #ffd25e; display: grid; place-items: center; }
 .bomba-btn:hover { background: rgba(255, 210, 94, .16); }
 .bomba-btn svg { width: 22px; height: 22px; }
-/* luzes de alerta: rolam na horizontal (setas aparecem se não couberem) */
-.luzes { flex: 1; min-width: 0; display: flex; align-items: center; gap: 2px; height: 44px; padding-left: 6px; border-left: 1px solid rgba(255, 255, 255, .1); }
-.luzes-pista { flex: 1; min-width: 0; display: flex; gap: 4px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; scroll-behavior: smooth; padding: 2px 0; }
-.luzes-pista::-webkit-scrollbar { display: none; }
-.luz { flex: none; width: 34px; height: 34px; border: 0; border-radius: 9px; background: rgba(255, 255, 255, .04); display: grid; place-items: center; scroll-snap-align: start; color: rgba(255, 255, 255, .3); }
+/* luzes de alerta: ficam ao lado do hodômetro enquanto couberem; se não, descem para uma linha própria
+   (o painel cresce) e quebram em quantas linhas precisar — nenhum alerta fica escondido */
+.luzes { --n: 1; flex: 1 1 auto; min-width: min(100%, calc(var(--n) * 38px + 8px)); display: flex; align-items: center; min-height: 44px; padding-left: 6px; border-left: 1px solid rgba(255, 255, 255, .1); }
+.cluster.quebrou .luzes { padding: 4px 0 0; border-left: 0; border-top: 1px solid rgba(255, 255, 255, .1); min-height: 0; }
+.luzes-pista { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 4px; padding: 2px 0; }
+.luz { flex: none; width: 34px; height: 34px; border: 0; border-radius: 9px; background: rgba(255, 255, 255, .04); display: grid; place-items: center; color: rgba(255, 255, 255, .3); }
 .luz svg { width: 22px; height: 22px; stroke-width: 1.9; }
 .luz-vencido { color: #ff4b3e; filter: drop-shadow(0 0 5px rgba(255, 60, 40, .75)); animation: pisca 2.4s ease-in-out infinite; }
 .luz-proximo { color: #ffb21f; filter: drop-shadow(0 0 5px rgba(255, 170, 20, .6)); }
 .luz-sem-registro { color: rgba(255, 255, 255, .32); }
 .luz-ok { color: #3ddc84; filter: drop-shadow(0 0 4px rgba(60, 220, 130, .5)); }
 @keyframes pisca { 50% { opacity: .55; } }
-.luz-seta { flex: none; width: 20px; height: 34px; border: 0; background: none; color: inherit; padding: 0; display: grid; place-items: center; opacity: .8; }
-.luz-seta:disabled { opacity: .2; }
-.luz-seta svg { width: 16px; height: 16px; }
 /* popover do hodômetro (toque longo) */
 .odo-pop { position: absolute; top: calc(100% + 10px); left: -60px; width: min(290px, calc(100vw - 20px)); z-index: 5; background: var(--sup); color: var(--txt); border-radius: 16px;
   box-shadow: var(--sombra); padding: 12px; display: flex; flex-direction: column; gap: 10px; animation: desce .2s cubic-bezier(.2, .8, .2, 1); }
@@ -194,7 +192,7 @@ body.filtro-aberto .dica { display: none; }
 
 /* ── Menu deslizante de regiões (estilo oficina de jogo de corrida) ── */
 .carrossel {
-  position: fixed; z-index: 18; top: calc(max(12px, env(safe-area-inset-top)) + 70px); left: 50%; transform: translateX(-50%);
+  position: fixed; z-index: 18; top: calc(max(12px, env(safe-area-inset-top)) + 70px + var(--extra-topo, 0px)); left: 50%; transform: translateX(-50%);
   width: min(560px, calc(100vw - 24px)); display: grid; grid-template-columns: 44px 1fr 44px; align-items: center;
   user-select: none; -webkit-user-select: none; transition: left .3s;
 }
@@ -223,7 +221,7 @@ body.filtro-aberto .dica { display: none; }
 .car-pontos { grid-column: 1 / -1; display: flex; justify-content: center; gap: 5px; margin-top: 2px; }
 .car-pontos i { width: 6px; height: 6px; border-radius: 3px; background: #6d747d; opacity: .45; transition: .25s; }
 .car-pontos i.on { width: 18px; background: var(--acento); opacity: 1; }
-.chips { position: fixed; z-index: 17; top: calc(max(12px, env(safe-area-inset-top)) + 148px); left: 50%; transform: translateX(-50%);
+.chips { position: fixed; z-index: 17; top: calc(max(12px, env(safe-area-inset-top)) + 148px + var(--extra-topo, 0px)); left: 50%; transform: translateX(-50%);
   display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; width: min(620px, calc(100vw - 24px)); transition: left .3s; }
 @media (min-width: 761px) { body.com-painel .chips { left: calc((100vw - 484px) / 2); width: min(560px, calc(100vw - 508px)); } }
 .chips button { border: 0; background: var(--sup); color: var(--txt); box-shadow: var(--sombra); border-radius: 999px; padding: 6px 12px; font-size: 12.5px; font-weight: 600; animation: fade .3s; }
@@ -267,7 +265,7 @@ body.filtro-aberto .dica { display: none; }
 .l-sel select { border: 1.5px solid #cfc6b2; background: #fffdf7; color: #2b2620; border-radius: 8px; padding: 5px 8px; font-size: 12.5px; font-weight: 600; }
 .seg.l-estilo { box-shadow: none; background: rgba(31, 45, 68, .08); }
 .seg.l-estilo button { color: #1f2d44; padding: 5px 12px; } .seg.l-estilo button.ativo { background: #1f2d44; color: #faf6ec; }
-.l-resumo { display: grid; grid-template-columns: 1fr 1fr 1.6fr; gap: 10px; margin-top: 10px; flex: none; }
+.l-resumo { display: grid; grid-template-columns: 1fr 1fr 1fr 1.6fr; gap: 10px; margin-top: 10px; flex: none; }
 .l-resumo > div { background: #fffdf7; border: 1.5px solid #e6dfcf; border-radius: 10px; padding: 6px 10px; line-height: 1.2; min-width: 0; }
 .l-resumo b { display: block; font: 700 25px/1.05 Caveat, cursive; color: #1d3f8f; }
 .l-resumo small { color: #7a7266; font-size: 11.5px; }
@@ -641,6 +639,63 @@ body.filtro-aberto .dica { display: none; }
 .ganho-valor em { font-style: normal; font-weight: 700; color: var(--txt3); }
 .ganho-valor input { border: 0 !important; background: none !important; font: 700 24px 'JetBrains Mono', monospace !important; padding: 8px 0 !important; }
 
+/* ── v6: fotos, consumo, vencimentos, versão (em breve) ── */
+.fotos-form { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; }
+.fotos-form > label:first-child { font-size: 12px; font-weight: 600; color: var(--txt2); }
+.foto-add { align-self: flex-start; padding: 7px 12px; font-size: 12.5px; cursor: pointer; }
+.anexos { display: flex; flex-wrap: wrap; gap: 8px; }
+.anexos:empty { display: none; }
+.anexo { position: relative; width: 76px; height: 76px; border-radius: 10px; overflow: hidden; background: var(--sup2); border: 1px solid var(--borda); }
+.anexo img { width: 100%; height: 100%; object-fit: cover; cursor: zoom-in; display: block; }
+.anexo.perdido::after { content: 'foto indisponível'; position: absolute; inset: 0; display: grid; place-items: center; text-align: center; font-size: 10px; color: var(--txt3); }
+.anexo-rm { position: absolute; top: 3px; right: 3px; width: 22px; height: 22px; border-radius: 50%; border: 0; background: rgba(0, 0, 0, .65); color: #fff; font-size: 15px; line-height: 1; display: grid; place-items: center; padding: 0; }
+.visor-foto { position: fixed; inset: 0; z-index: 90; background: rgba(0, 0, 0, .92); display: grid; place-items: center; padding: 14px; animation: fade .2s; }
+.visor-foto img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; }
+.visor-foto .fechar { position: absolute; top: max(14px, env(safe-area-inset-top)); right: 14px; background: rgba(255, 255, 255, .15); color: #fff; }
+.b-cheio { flex-direction: row !important; align-items: flex-start; gap: 10px !important; padding: 8px 10px; border-radius: 10px; background: rgba(31, 45, 68, .06); cursor: pointer; }
+.b-cheio input { width: 20px !important; height: 20px; margin: 1px 0 0; flex: none; accent-color: #1f2d44; }
+.b-cheio span { display: flex; flex-direction: column; } .b-cheio b { font-size: 13px; color: #1d2229; } .b-cheio small { font-weight: 500; color: #5b636c; }
+.b-consumo { display: flex; align-items: center; gap: 8px; margin: 6px 14px 0; padding: 8px 10px; border-radius: 10px; background: #12201a; color: #9fdcb4; font-size: 12.5px; }
+.b-consumo b { color: #8dffb6; font-family: 'Share Tech Mono', monospace; font-size: 15px; font-weight: 400; }
+.b-consumo svg { width: 18px; height: 18px; flex: none; }
+.venc { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.venc-tit { font: 700 26px/1 Caveat, cursive; color: #1f2d44; }
+.venc-tit small { font: 600 11.5px Inter, sans-serif; color: #7a7266; margin-left: 6px; }
+.venc-card .carimbo { font-size: 12px; min-width: 0; }
+.st-borda-sem-data .l-ico { opacity: .6; }
+.pi-dica { display: flex; align-items: center; gap: 10px; border: 1px dashed var(--pi-linha); background: none; color: var(--pi-sub); border-radius: 12px; padding: 10px 12px; text-align: left; font-size: 12.5px; }
+.pi-dica svg { flex: none; }
+.rel-opcoes { margin-top: 10px; }
+
+/* ── Relatório para revenda: só ele aparece na impressão / "Salvar como PDF" ── */
+#relatorio { display: none; }
+@media print {
+  @page { size: A4; margin: 14mm 12mm; }
+  html, body { height: auto !important; overflow: visible !important; background: #fff !important; }
+  body.imprimindo > *:not(#relatorio) { display: none !important; }
+  body.imprimindo #relatorio { display: block; color: #111; font: 10.5pt/1.4 Inter, Arial, sans-serif; }
+  #relatorio header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #1f2d44; padding-bottom: 6px; margin-bottom: 10px; }
+  #relatorio h1 { font-size: 20pt; margin: 0; color: #1f2d44; }
+  #relatorio header p { margin: 2px 0 0; color: #555; }
+  #relatorio .rel-data { color: #555; font-size: 9.5pt; }
+  #relatorio h2 { font-size: 13pt; color: #1f2d44; margin: 16px 0 6px; border-bottom: 1px solid #ccd; padding-bottom: 3px; break-after: avoid; }
+  #relatorio .rel-dados { display: flex; gap: 16px; align-items: flex-start; }
+  #relatorio .rel-dados table { flex: 1; border-collapse: collapse; }
+  #relatorio .rel-dados th { text-align: left; color: #555; font-weight: 600; padding: 2px 10px 2px 0; width: 42%; }
+  #relatorio .rel-resumo { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; flex: 1; }
+  #relatorio .rel-resumo div { border: 1px solid #ccd; border-radius: 6px; padding: 6px 8px; }
+  #relatorio .rel-resumo b { display: block; font-size: 13pt; color: #1f2d44; } #relatorio .rel-resumo span { font-size: 8.5pt; color: #555; }
+  #relatorio .rel-tab { width: 100%; border-collapse: collapse; font-size: 9pt; }
+  #relatorio .rel-tab th { background: #eef1f5; text-align: left; padding: 4px 6px; border-bottom: 1px solid #99a; }
+  #relatorio .rel-tab td { padding: 4px 6px; border-bottom: 1px solid #dde; vertical-align: top; }
+  #relatorio .rel-tab tr { break-inside: avoid; }
+  #relatorio .rel-tab .num { text-align: right; white-space: nowrap; }
+  #relatorio .rel-tab tfoot td { font-weight: 700; border-top: 2px solid #1f2d44; }
+  #relatorio .rel-vencido { color: #b3261e; font-weight: 700; } #relatorio .rel-proximo { color: #9a6200; font-weight: 700; } #relatorio .rel-ok { color: #17803f; }
+  #relatorio .rel-sem-registro, #relatorio .rel-sem-intervalo { color: #666; }
+  #relatorio footer { margin-top: 18px; font-size: 8.5pt; color: #666; border-top: 1px solid #ccd; padding-top: 6px; }
+}
+
 /* telas bem estreitas: o carimbo desce para baixo do texto do cartão */
 @media (max-width: 359px) {
   .l-card { grid-template-columns: 40px minmax(0, 1fr); }
@@ -649,7 +704,7 @@ body.filtro-aberto .dica { display: none; }
 
 /* ── Celular: painel vira bottom sheet ──────────── */
 @media (max-width: 760px) {
-  .cluster { height: 52px; gap: 3px; padding: 4px 4px 4px 4px; border-radius: 16px; }
+  .cluster { min-height: 52px; gap: 3px; padding: 4px 4px 4px 4px; border-radius: 16px; }
   .marca { height: 42px; padding-right: 2px; }
   .marca-ico { width: 34px; height: 34px; border-radius: 10px; } .marca-ico svg { width: 20px; height: 20px; }
   .marca-seta { width: 12px; height: 12px; }
@@ -660,7 +715,8 @@ body.filtro-aberto .dica { display: none; }
   .bomba-btn { width: 34px; height: 34px; border-radius: 10px; } .bomba-btn svg { width: 20px; height: 20px; }
   .luzes { padding-left: 4px; gap: 0; }
   .luz { width: 30px; height: 30px; } .luz svg { width: 20px; height: 20px; }
-  .luz-seta { width: 16px; }
+  .luzes { min-width: min(100%, calc(var(--n) * 33px + 6px)); min-height: 42px; }
+  .luzes-pista { gap: 3px; }
   .odo-pop { left: -40px; }
   .barra { left: 10px; right: 10px; }
   .barra-dir { gap: 6px; }
@@ -682,12 +738,12 @@ body.filtro-aberto .dica { display: none; }
   .form { grid-template-columns: 1fr; }
   .pf-linha { grid-template-columns: 1fr 50px 80px 26px; }
   .spec { grid-template-columns: 110px 1fr; }
-  .carrossel { top: calc(max(12px, env(safe-area-inset-top)) + 62px); grid-template-columns: 36px 1fr 36px; }
+  .carrossel { top: calc(max(12px, env(safe-area-inset-top)) + 62px + var(--extra-topo, 0px)); grid-template-columns: 36px 1fr 36px; }
   .car-seta { width: 34px; height: 34px; }
   .car-pista { height: 52px; }
   .car-titulo b { font-size: 17px; }
   .car-vizinho { font-size: 10.5px; }
-  .chips { top: calc(max(12px, env(safe-area-inset-top)) + 132px); }
+  .chips { top: calc(max(12px, env(safe-area-inset-top)) + 132px + var(--extra-topo, 0px)); }
   .chips button { padding: 5px 10px; font-size: 12px; }
   body.com-painel .chips { display: none; }
   .dica { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 66px); }
