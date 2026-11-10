@@ -8,7 +8,7 @@ Código: `L` + número sequencial (nunca reaproveitar um código, mesmo se a ide
 | Código | Ideia | Status | Origem | Observações |
 |---|---|---|---|---|
 | L01 | Notificações push (lembretes de revisão, vencimento de documentos, backup) | 💡 | v6 (ideia 6) | Adiada para versão futura. No Android funciona com PWA instalado; precisa de permissão do usuário. |
-| L02 | Leitura OBD2 via Bluetooth (km, códigos de falha, sensores) | 💡 | v6 (ideia 7) | Adiada. Web Bluetooth no Chrome Android + adaptador ELM327 BLE. |
+| L02 | Leitura OBD2 via Bluetooth (km, códigos de falha, sensores, nível de combustível) | 💡 | v6 (ideia 7) | Adiada. Web Bluetooth no Chrome Android + adaptador ELM327 BLE. Desde a v9 a cor da bomba do painel é uma estimativa (`nivelBomba()` em `js/main.js`); com OBD2, trocar pelo nível real do tanque (PID 0x2F). |
 | L03 | Versão do veículo (MT, HL, HL-T, HL-E, GT, GT AWD) alterar o modelo 3D | 💡 | v6 | Hoje o campo é só informativo. Depende de modelos/peças de cada versão do CY4A. |
 | L04 | Usar logo de brasão e logo simplificada no app | 💡 | v7 | Arquivos já em `marca/` (`logo-completa.png`, `logo-simplificada.png`). Substituir pelos originais do designer quando houver. |
 | L05 | Backup automático no Google Drive (sem ação do usuário) | 💡 | v6 | Requer projeto no Google Cloud com credencial OAuth. Hoje o backup é manual via compartilhamento. |

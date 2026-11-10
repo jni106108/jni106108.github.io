@@ -34,19 +34,13 @@
   <div id="rotulo" class="rotulo" hidden></div>
 
   <header class="barra">
-    <!-- Painel superior (como o painel de instrumentos): menu do veículo, hodômetro, abastecimento e luzes de alerta -->
+    <!-- Painel superior (como o painel de instrumentos): hodômetro, abastecimento, consumo e luzes de alerta -->
     <div class="cluster" id="cluster">
-      <div class="veic" id="veic">
-        <button class="marca" data-acao="menu-veiculo" aria-expanded="false" aria-controls="veic-lista" title="Meu veículo">
-          <span class="marca-ico"><svg viewBox="0 0 24 24"><path d="M3.5 14.5l1.8-4.6a2 2 0 0 1 1.9-1.3h9.6a2 2 0 0 1 1.9 1.3l1.8 4.6"/><path d="M2.5 14.5h19v3.2h-19z"/><circle cx="7" cy="17.7" r="1.7"/><circle cx="17" cy="17.7" r="1.7"/></svg></span>
-          <svg class="marca-seta" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
-        </button>
-        <div class="veic-lista" id="veic-lista" hidden></div>
-      </div>
       <div class="odo-caixa" id="odo-caixa">
         <button class="odometro" id="odometro" title="Hodômetro · toque e segure para editar"></button>
         <div class="odo-pop" id="odo-pop" hidden></div>
       </div>
+      <!-- cor da bomba: verde/amarelo/vermelho conforme o tempo e os km desde o último abastecimento -->
       <button class="bomba-btn" data-acao="abastecer" title="Registrar abastecimento">
         <svg viewBox="0 0 24 24"><path d="M4 21V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v16"/><path d="M3 21h13M6.5 7h6v4h-6z"/><path d="M15 9h1.5a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0V8.5L18.5 5.5"/></svg>
       </button>
@@ -79,30 +73,48 @@
   </nav>
   <div id="chips" class="chips"></div>
 
-  <!-- Barra inferior: filtro de camadas (abre para cima), catálogo, manual e personalização -->
+  <!-- Canto inferior esquerdo, acima da barra de navegação: enquadrar o carro inteiro e filtro de camadas (abre para cima) -->
   <div class="filtro" id="filtro">
     <div class="filtro-lista" id="filtro-lista" role="listbox" aria-label="Filtrar sistemas" hidden></div>
-    <div class="perso-lista" id="perso-lista" hidden></div>
-    <div class="filtro-linha">
-      <!-- confirmação antes de abrir o manual (PDF em outra aba) -->
-      <div class="manual-conf" id="manual-conf" role="dialog" aria-label="Abrir o manual" hidden>
-        <p><b>Abrir o manual do veículo?</b><small>Manual do proprietário Lancer (PDF) · abre em outra aba</small></p>
-        <div><button data-acao="fechar-menus">Cancelar</button><a class="pri" id="manual-abrir" data-acao="manual-abrir" target="_blank" rel="noopener">Abrir manual</a></div>
-      </div>
-      <button class="filtro-btn" data-acao="filtro" aria-expanded="false" aria-controls="filtro-lista" title="Filtrar sistemas"></button>
-      <button class="ico" data-acao="catalogo" title="Catálogo de peças">
-        <svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>
-      </button>
-      <button class="ico" data-acao="manual" aria-expanded="false" aria-controls="manual-conf" title="Manual do proprietário">
-        <svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M9 7h6M9 10.5h6"/></svg>
-      </button>
-      <button class="ico" data-acao="personalizar" aria-expanded="false" aria-controls="perso-lista" title="Personalizar o carro">
-        <svg viewBox="0 0 24 24"><path d="M18.4 2.6a2 2 0 0 1 2.9 2.9L12 14.8 9.2 12z"/><path d="M9.2 12c-2.5 0-4.2 1.8-4.2 4.2 0 1.6-1.1 2.8-2.5 3.3 1.4 1 3.2 1.5 5 1.5 3.4 0 4.5-2.4 4.5-4.2z"/></svg>
-      </button>
-    </div>
+    <button class="ico cam-reset" data-acao="camera-reset" title="Enquadrar o carro inteiro" aria-label="Enquadrar o carro inteiro">
+      <svg viewBox="0 0 24 24"><path d="M3 8V5.5A2.5 2.5 0 0 1 5.5 3H8M16 3h2.5A2.5 2.5 0 0 1 21 5.5V8M21 16v2.5a2.5 2.5 0 0 1-2.5 2.5H16M8 21H5.5A2.5 2.5 0 0 1 3 18.5V16"/><path d="M6.5 14.2l1.1-2.7a1.6 1.6 0 0 1 1.5-1h5.8a1.6 1.6 0 0 1 1.5 1l1.1 2.7v2.3h-11z"/><path d="M9 16.5v.6M15 16.5v.6"/></svg>
+    </button>
+    <button class="filtro-btn" data-acao="filtro" aria-expanded="false" aria-controls="filtro-lista" title="Filtrar sistemas"></button>
   </div>
 
-  <div id="dica" class="dica">Toque numa peça ou deslize o menu acima</div>
+  <!-- Barra de navegação inferior: catálogo, livro de bordo, manual e, no canto, o botão + (lançamentos rápidos) -->
+  <nav class="nav-inf" id="nav-inf" aria-label="Navegação">
+    <!-- confirmação antes de abrir o manual (PDF em outra aba) -->
+    <div class="manual-conf" id="manual-conf" role="dialog" aria-label="Abrir o manual" hidden>
+      <p><b>Abrir o manual do veículo?</b><small>Manual do proprietário Lancer (PDF) · abre em outra aba</small></p>
+      <div><button data-acao="fechar-menus">Cancelar</button><a class="pri" id="manual-abrir" data-acao="manual-abrir" target="_blank" rel="noopener">Abrir manual</a></div>
+    </div>
+    <button class="nav-item" data-acao="catalogo" title="Catálogo de peças">
+      <svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg><span>Catálogo</span>
+    </button>
+    <button class="nav-item" data-acao="livro" title="Livro de bordo (abre na última aba vista)">
+      <svg viewBox="0 0 24 24"><path d="M7 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7z"/><path d="M4.5 6.5h4M4.5 10.5h4M4.5 14.5h4M4.5 18.5h4"/><path d="M11.5 8h5M11.5 11.5h5"/></svg><span>Livro de bordo</span>
+    </button>
+    <button class="nav-item" data-acao="manual" aria-expanded="false" aria-controls="manual-conf" title="Manual do proprietário">
+      <svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M9 7h6M9 10.5h6"/></svg><span>Manual</span>
+    </button>
+    <div class="fab-area">
+      <div class="fab-menu" id="fab-menu" role="menu" aria-label="Novo lançamento" hidden></div>
+      <button class="fab" data-acao="fab" aria-expanded="false" aria-controls="fab-menu" aria-label="Novo lançamento" title="Novo lançamento">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+    </div>
+  </nav>
+  <!-- fundo escurecido enquanto o botão + está aberto -->
+  <div class="fab-fundo" id="fab-fundo" data-acao="fab-fechar" hidden></div>
+
+  <!-- Personalizar: toque e segure o carro → sugestão → carrossel na parte de baixo com ✕ e ✓ -->
+  <div class="perso-sugestao" id="perso-sugestao" hidden>
+    <button data-acao="perso-iniciar"><svg viewBox="0 0 24 24"><path d="M18.4 2.6a2 2 0 0 1 2.9 2.9L12 14.8 9.2 12z"/><path d="M9.2 12c-2.5 0-4.2 1.8-4.2 4.2 0 1.6-1.1 2.8-2.5 3.3 1.4 1 3.2 1.5 5 1.5 3.4 0 4.5-2.4 4.5-4.2z"/></svg>Personalizar veículo</button>
+  </div>
+  <div class="perso-lista" id="perso-lista" role="dialog" aria-label="Personalizar veículo" hidden></div>
+
+  <div id="dica" class="dica">Toque numa peça para ver o catálogo · toque e segure o carro para personalizar</div>
 
   <aside id="painel" class="painel" aria-live="polite" hidden></aside>
   <div id="livrete" class="livrete" hidden></div>

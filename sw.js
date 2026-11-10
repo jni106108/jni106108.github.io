@@ -2,7 +2,7 @@
 // Código (html/js/css): rede primeiro, para receber atualizações. Dados pesados (modelo, diagramas, PDFs, CDN): cache primeiro.
 // Dois caches: CODIGO muda a cada versão; PESADO é mantido entre versões, para o celular não baixar de novo
 // o modelo 3D (12,7 MB), o three.js e os diagramas a cada atualização. Troque PESADO só se esses arquivos mudarem.
-const CODIGO = 'lancer-codigo-v8';
+const CODIGO = 'lancer-codigo-v9';
 const PESADO = 'lancer-pesado-v1';
 const ESSENCIAL = [
   './', 'index.html', 'css/app.css', 'js/main.js', 'js/carro3d.js', 'js/zonas.js', 'js/dados.js', 'js/anexos.js',
