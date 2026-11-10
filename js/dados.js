@@ -35,13 +35,14 @@ const padrao = () => ({
     renavam: '', proprietario: '', municipio: '', uf: '', combustivel: 'GASOLINA', motorNum: '', categoria: 'PARTICULAR', exercicio: '',
   },
   registros: [],        // registro.anexos = ids das fotos (ficam no IndexedDB, ver anexos.js)
-  // { id, data, combustivel: etanol | gasolina | premium, total, preco, litros, km, posto, cheio }
+  // { id, data, combustivel: etanol | gasolina | premium, total, preco, litros, km, posto, cheio, geo? }
   // cheio = tanque completado (base do cálculo de consumo); lançamentos antigos sem o campo contam como cheio
+  // geo = { lat, lng, prec } localização do posto (opcional, v8)
   abastecimentos: [],
-  ganhos: [],           // ganhos como motorista de app: { id, inicio, fim, valor }
+  ganhos: [],           // ganhos (aplicativo, caronas, ajudas…): { id, inicio, fim, valor }
   lembretes: {}, // overrides { id: { km, meses } }
-  // vencimentos (data aaaa-mm-dd vazia = não cadastrado)
-  documentos: { ipva: { venc: '', valor: '' }, licenciamento: { venc: '' }, seguro: { venc: '', seguradora: '' }, cnh: { venc: '' } },
+  // vencimentos (data aaaa-mm-dd vazia = não cadastrado) · dispensado = IPVA isento / sem seguro (sem alerta)
+  documentos: { ipva: { venc: '', valor: '', dispensado: false }, licenciamento: { venc: '' }, seguro: { venc: '', seguradora: '', dispensado: false }, cnh: { venc: '' } },
   // tema: sistema | claro | escuro · odometro: moderno | classico · corRodas: null = original
   // backupDias: lembrete de backup (0 = nunca) · ultimoBackup: data do último backup feito
   // placaDianteira: original (centro) | lado (lado do motorista)
