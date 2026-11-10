@@ -38,32 +38,34 @@ Nenhum arquivo desta pasta passa de 25 MB (o maior é `modelo/lancer.glb`, com 1
 - **Aba Peças**: os 122 grupos e 194 diagramas do catálogo EPC. Zoom e arrasto no diagrama, tabela com nº OEM, supersessão, período, quantidade e preço de referência. Busca por nome, OEM ou referência.
 - **Aba Histórico**: registro de troca/serviço com data, km, peças (OEM, quantidade, preço), mão de obra, oficina e observações.
 - **Aba Reparos**: manutenção programada (intervalos do manual), especificações, problemas conhecidos, páginas do manual (abre o PDF na página certa) e buscas de vídeo no YouTube.
-- **Livro de manutenção** com abas: Veículo (ficha no visual do CRLV verde ou branco), Histórico (linha do tempo por ano; o selo do ano abre/fecha os serviços), Revisões (carimbos de em dia / vencido / atenção), Despesas (manutenção e combustível, com filtros por período, categoria e valor) e Ganhos. Cabeçalho e botões ficam fixos e só a lista rola.
+- **Livro de bordo** com abas: Veículo (ficha no visual do CRLV verde ou branco), Histórico (linha do tempo por ano; o selo do ano abre/fecha os serviços), Revisões (carimbos de em dia / vencido / atenção; tocar num item abre o texto completo e o último serviço feito), Despesas (gráfico de pizza por categoria, período, "Filtrar por" e "Ordenar por"; tocar na fatia de combustível mostra o consumo) e Ganhos. Cabeçalho e botões ficam fixos e só a lista rola.
   - Tocar num serviço do Histórico ou de Despesas abre um menu com **Ver mais**, **Editar** e **Excluir**.
-  - Tocar num item de Revisões/Alertas abre o registro **só daquele serviço** (os outros serviços programados não aparecem para marcar). Para anotar vários juntos, use “+ Anotar serviço”.
+  - Tocar num item do painel de Alertas abre o registro **só daquele serviço** (os outros serviços programados não aparecem para marcar). Para anotar vários juntos, use “Anotar serviço” (botão com carimbo).
+  - Registrar serviço: tipo com botão "i" explicando cada um (inclui **Estética**: lavagem, polimento, funilaria…), título opcionalmente gerado a partir das outras informações, e serviços programados com os mesmos ícones das revisões.
 - **Configurações** (engrenagem, canto superior direito): tema claro, escuro ou do sistema (vale para o fundo do 3D), visual do documento, pontos no carro, backup, restauração e planilha.
 
 - **Painel superior** (visual de painel de instrumentos):
   - **Hodômetro** moderno (visor digital) ou clássico (tambores). Toque e segure nele para editar o km e trocar o estilo; o estilo também fica em Configurações.
-  - **Bomba**: registra um abastecimento numa tela com visual de bomba. Você digita o total e o preço do litro no visor, os litros são calculados, e os bicos escolhem o combustível (verde = etanol, amarelo = gasolina comum, vermelho = premium). Também dá para informar km, data e posto.
-  - **Luzes de alerta**: vermelha = vencido, âmbar = vence em breve ou km desatualizado, cinza = sem registro. Se não couberem, rolam para os lados com as setas. Tocar abre o painel de alertas.
-- **Barra inferior**: filtro, catálogo de peças, manual do proprietário e personalização (com ou sem aerofólio, cor das rodas; "mais peças" em breve).
+  - **Bomba**: registra um abastecimento numa tela com visual de bomba. Você digita o total e o preço do litro no visor, os litros são calculados, e os bicos escolhem o combustível (verde = etanol, amarelo = gasolina comum, vermelho = premium). Também dá para informar km, data, posto e salvar a **localização do posto** (GPS).
+  - **Luzes de alerta**: vermelha = vencido, âmbar = vence em breve ou km desatualizado, cinza = sem registro. Se não couberem, descem para uma linha própria. Tocar abre o painel de alertas.
+  - **Consumo médio (km/L)** ao lado da bomba, no mesmo visual do hodômetro.
+- **Barra inferior**: filtro (mostra o nome por alguns segundos e depois só o ícone; azul = filtro ativo), catálogo de peças (com busca), manual do proprietário (pede confirmação antes de abrir) e personalização em carrossel horizontal embaixo do carro (aerofólio, placa dianteira, cor das rodas; "mais peças" em breve).
 - **Consumo (km/L)**: marque "Completei o tanque" e informe o km ao abastecer. Entre dois tanques cheios, o app divide os km rodados pelos litros colocados (abastecimentos parciais no meio só somam litros). Aparece na bomba e em Despesas, com o custo do combustível por km.
 - **Fotos e notas fiscais** nos registros de serviço: ficam no próprio aparelho (IndexedDB, `js/anexos.js`), reduzidas para cerca de 1600 px, e entram no backup.
-- **Vencimentos** (aba Veículo do livro): IPVA, licenciamento, seguro e CNH. Acendem no painel 30 dias antes (âmbar) e depois de vencidos (vermelho). O painel superior cresce em linhas quando há muitas luzes, para nenhum alerta ficar escondido.
+- **Vencimentos** (aba Veículo do livro): IPVA (com opção "isento"), licenciamento, seguro (com opção "não tenho seguro") e CNH. Acendem no painel 30 dias antes (âmbar) e depois de vencidos (vermelho). O painel superior cresce em linhas quando há muitas luzes, para nenhum alerta ficar escondido.
 - **Backup**: Configurações → "Fazer backup agora". No celular abre o compartilhamento do Android (escolha Google Drive, e-mail…); no PC baixa o arquivo. Uma luz lembra de refazer o backup a cada 7, 15 ou 30 dias. Para backup automático direto no Google Drive, sem tocar em nada, seria preciso criar um projeto no Google Cloud (credencial OAuth); fica para uma próxima versão.
 - **Relatório para revenda (PDF)**: Configurações ou aba Histórico. Abre a impressão do navegador; escolha "Salvar como PDF". Dá para ocultar valores, placa/chassi e o nome do proprietário.
 - **Versão do carro**: no campo "Marca / Modelo / Versão" da ficha (lista com MT, HL, HL-T, HL-E, GT, GT AWD). Por enquanto o 3D é o mesmo para todas.
-- **Valores em dinheiro** (bomba e ganhos) são digitados da direita para a esquerda, como na maquininha: 5-0-0-0 = R$ 50,00. O preço do litro tem 3 casas, como no visor da bomba (5-8-9-9 = R$ 5,899).
+- **Valores em dinheiro** (bomba, ganhos, mão de obra, preço das peças e valor do IPVA) são digitados da direita para a esquerda, como na maquininha: 5-0-0-0 = R$ 50,00. O preço do litro tem 3 casas, como no visor da bomba (5-8-9-9 = R$ 5,899).
 - **Placa no 3D**: Personalizar → "Placa dianteira" Original (centro) ou Lado (lado do motorista, entre o farol e o farol de neblina, como no Evo). O modelo da placa é automático: ABC1D23 = Mercosul; ABC1234 = antiga cinza (com UF e município da ficha); carro com 30 anos ou mais de fabricação = placa preta.
-- **Ganhos como motorista de app** (menu do veículo): data inicial, data final e valor. A aba Ganhos do livro mostra os períodos e o saldo (ganhos − gastos com o carro).
+- **Lançar ganhos** (menu do veículo; aplicativo, caronas, ajudas…): data inicial, data final e valor. A aba Ganhos do livro mostra os períodos e o saldo (ganhos − gastos com o carro).
 
 ### Navegação
 
 - **3D**: arraste para girar em volta do carro e use roda/pinça para aproximar. Não há pan: o carro fica no lugar.
 - **Menu deslizante** (topo central): arraste para os lados, use as setas ‹ › ou as setas do teclado. O carro gira até a região escolhida e ela fica destacada. A lista é circular e mostra só as regiões do filtro atual.
 - **Filtro** (canto inferior esquerdo): abre para cima com Geral, Carroceria, Vidros e luzes, Mecânica, Motor, Transmissão, Suspensão, Freios, Direção, Elétrica e Interior. As peças do sistema escolhido ficam sólidas e o resto translúcido; Geral mostra o carro sem realce. Clicar numa peça fora do filtro troca para o sistema dela. No celular, o botão sobe junto com a gaveta de detalhes.
-- **Menu do veículo** (canto superior esquerdo): livro de manutenção, histórico, despesas, alertas, dados do veículo, catálogo e manual. Qualquer aba do livro fica a dois toques. O 3D fica pausado e desfocado enquanto o livro está aberto.
+- **Menu do veículo** (canto superior esquerdo): livro de bordo, histórico, despesas, dados do veículo e lançar ganhos. Qualquer aba do livro fica a dois toques. O 3D fica pausado e desfocado enquanto o livro está aberto.
 
 ## Modelo 3D
 
