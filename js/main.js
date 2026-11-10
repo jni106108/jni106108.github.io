@@ -153,6 +153,11 @@ const urlManual = pagina => {
 // Novidades de cada versão (a primeira da lista é a atual). Aparece em Configurações → Novidades e abre
 // sozinha na primeira vez que o app é aberto numa versão nova. Para publicar uma versão: acrescente no topo.
 const NOVIDADES = [
+  { versao: '9.1', data: '10/11/2026', titulo: 'Ajustes de tela', itens: [
+    'Telas largas (tablet, multimídia, PC): menu vertical à esquerda com o + embaixo (abre para o lado), filtro no canto inferior direito e o carro à direita.',
+    'Grade de engenharia deitada no chão, na altura dos pneus, sumindo suavemente nas bordas (claro e escuro).',
+    'O editor do hodômetro e os balões não saem mais da tela.',
+  ] },
   { versao: '9', data: '10/11/2026', titulo: 'Nova barra inferior', itens: [
     'Barra de navegação embaixo: Catálogo, Livro de bordo (abre na última aba vista) e Manual.',
     'Botão + no canto: lançar abastecimento, anotar serviço ou lançar ganhos.',
@@ -615,13 +620,19 @@ function abrirZona(id) {
   ajustarMargem();
 }
 const celular = () => window.innerWidth <= 760;
+// Tela larga (16:9, 16:10, 4:3 deitada: tablet, multimídia, PC): menu vertical à esquerda e o carro à direita
+// (a mesma condição está no CSS, bloco v9.1). Tela em pé: barra de navegação embaixo.
+const LARGO = '(orientation: landscape) and (min-aspect-ratio: 4/3)';
+const telaLarga = () => matchMedia(LARGO).matches;
 function ajustarMargem() {
   const p = $('#painel'), topo = (celular() ? 134 : 124) + (ajustarCluster.extra || 0);   // painel superior + menu de regiões
   document.body.classList.toggle('painel-cheio', !p.hidden && p.classList.contains('cheio'));
-  // personalizando: carro acima do carrossel; no celular, acima da barra de navegação
-  if (p.hidden) return carro.setMargem(0, !$('#perso-lista').hidden ? $('#perso-lista').offsetHeight + 20 : celular() ? $('#nav-inf').offsetHeight + 40 : 0, topo);
-  if (celular()) carro.setMargem(0, p.classList.contains('cheio') ? 0 : window.innerHeight * 0.58, topo);
-  else carro.setMargem(p.offsetWidth + 12, 0, topo);
+  const perso = !$('#perso-lista').hidden, largo = telaLarga();
+  const esq = largo && !perso ? $('#nav-inf').offsetWidth + 24 : 0;   // largura do menu vertical (o carro vai para a direita)
+  // personalizando: carro acima do carrossel; no celular em pé, acima da barra de navegação
+  if (p.hidden) return carro.setMargem(-esq, perso ? $('#perso-lista').offsetHeight + 20 : celular() && !largo ? $('#nav-inf').offsetHeight + 40 : 0, topo);
+  if (celular()) carro.setMargem(-esq, p.classList.contains('cheio') ? 0 : window.innerHeight * 0.58, topo);
+  else carro.setMargem(p.offsetWidth + 12 - esq, 0, topo);
 }
 window.addEventListener('resize', () => carro && ajustarMargem());
 
@@ -1291,6 +1302,8 @@ function alternarMenu(qual) {
   if (botao) $(botao).setAttribute('aria-expanded', 'true');
   if (qual === 'filtro' || qual === 'manual') document.body.classList.add('filtro-aberto');
   if (qual === 'filtro') expandirFiltro(true);
+  // tela larga: o balão do manual abre ao lado do botão, à direita do menu vertical
+  if (qual === 'manual') $('#manual-conf').style.top = telaLarga() ? $('[data-acao="manual"]').offsetTop + 'px' : '';
   // botão +: fundo escurecido e o resto da tela some, para o foco ficar na escolha do lançamento
   if (qual === 'fab') { document.body.classList.add('fab-aberto'); $('#fab-fundo').hidden = false; }
 }
@@ -1681,6 +1694,9 @@ function modalDetalheRegistro(r) {
 function mostrarBalao(el, texto, abaixo = false) {
   el.querySelector('.balao')?.remove();
   const b = document.createElement('span'); b.className = 'balao' + (abaixo ? ' abaixo' : ''); b.textContent = texto; el.appendChild(b);
+  // perto da borda da tela, o balão desliza para dentro (a setinha continua apontando para o elemento)
+  const r = b.getBoundingClientRect(), dx = Math.max(0, 8 - r.left) - Math.max(0, r.right - (window.innerWidth - 8));
+  if (dx) b.style.setProperty('--dx', dx + 'px');
   clearTimeout(mostrarBalao.h); mostrarBalao.h = setTimeout(() => b.remove(), 2600);
 }
 

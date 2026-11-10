@@ -15,6 +15,42 @@ const AF = L - XCF, AR = L + XCR, NP = 2.7;   // superelipse da planta
 const R_OMBRO = 0.07, KTOP = 1 - R_OMBRO / A;
 const ARCO_R = 0.405, ARCO_Y = 0.33;
 
+// Piso de engenharia: grade no plano XZ, no nível de contato dos pneus (y = 0), com desvanecimento radial a partir
+// do centro do carro (~13% de opacidade embaixo dele → 0% nas bordas), o que dá a sensação de piso infinito.
+// As linhas são desenhadas no shader (antisserrilhadas com fwidth) e as finas somem quando ficam densas demais
+// (câmera rasante), para não formar moiré. Não participa da seleção: o toque só procura as peças do carro.
+const GRADE_CORES = { claro: [0x1f2d44, 0.13], escuro: [0xa8c4f0, 0.11] };   // [cor das linhas, opacidade]
+function criarGrade() {
+  const mat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false,
+    uniforms: { uCor: { value: new THREE.Color(GRADE_CORES.claro[0]) }, uOpac: { value: GRADE_CORES.claro[1] }, uRaio: { value: 9.5 } },
+    vertexShader: `varying vec2 vXZ;
+      void main() { vec4 m = modelMatrix * vec4(position, 1.0); vXZ = m.xz; gl_Position = projectionMatrix * viewMatrix * m; }`,
+    fragmentShader: `uniform vec3 uCor; uniform float uOpac; uniform float uRaio; varying vec2 vXZ;
+      float linhas(vec2 p, float passo) {
+        vec2 c = p / passo, w = fwidth(c);
+        vec2 g = abs(fract(c - 0.5) - 0.5) / max(w, vec2(1e-4));
+        float l = 1.0 - min(min(g.x, g.y), 1.0);
+        return l * (1.0 - smoothstep(0.3, 0.7, max(w.x, w.y)));   // some quando as linhas ficam densas
+      }
+      void main() {
+        float l = max(linhas(vXZ, 0.5) * 0.55, linhas(vXZ, 2.5));   // finas a cada 0,5 m, fortes a cada 2,5 m
+        float d = length(vXZ);
+        float a = l * uOpac * (1.0 - smoothstep(uRaio * 0.2, uRaio, d));
+        if (a < 0.003) discard;
+        gl_FragColor = vec4(uCor, a);
+        #include <colorspace_fragment>
+      }`,
+  });
+  mat.extensions = { derivatives: true };   // fwidth no WebGL1
+  const g = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), mat);
+  g.rotation.x = -Math.PI / 2; g.position.y = 0.001;
+  g.renderOrder = -1;          // primeiro entre os transparentes: peças translúcidas e sombras ficam por cima
+  g.raycast = () => {};        // nunca intercepta toques/cliques
+  g.castShadow = g.receiveShadow = false;
+  return g;
+}
+
 const lerp = (a, b, t) => a + (b - a) * t;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
@@ -231,6 +267,7 @@ export class Carro3D {
     g.fillStyle = grad; g.fillRect(0, 0, 256, 256);
     const ao = new THREE.Mesh(new THREE.PlaneGeometry(6.2, 3.4), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthWrite: false }));
     ao.rotation.x = -Math.PI / 2; ao.position.y = 0.002; cena.add(ao);
+    this._grade = criarGrade(); cena.add(this._grade);   // piso de engenharia (v9.1)
 
     this.raycaster = new THREE.Raycaster();
     this.ponteiro = new THREE.Vector2();
@@ -844,7 +881,7 @@ export class Carro3D {
   // fator de distância para caber na área livre (painel aberto, celular em pé)
   _fatorDist() {
     const oa = this._offAlvo || { x: 0, y: 0 }, w = this.container.clientWidth, h = this.container.clientHeight;
-    const aspLivre = Math.max(0.3, (w - 2 * oa.x) / Math.max(1, h - 2 * Math.abs(oa.y)));
+    const aspLivre = Math.max(0.3, (w - 2 * Math.abs(oa.x)) / Math.max(1, h - 2 * Math.abs(oa.y)));   // x < 0 = menu à esquerda
     // compara a abertura horizontal livre com a de referência (PC 16:9, fov 32°)
     const ref = Math.tan(THREE.MathUtils.degToRad(16)) * 1.7;
     const atual = Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * aspLivre;
@@ -967,6 +1004,9 @@ export class Carro3D {
   setFundoEscuro(escuro) {
     this._chao.material.opacity = escuro ? 0.45 : 0.2;
     this.renderer.toneMappingExposure = escuro ? 1.18 : 1.08;
+    // linhas do piso: escuras discretas no tema claro, claras discretas no escuro
+    const [cor, opac] = GRADE_CORES[escuro ? 'escuro' : 'claro'];
+    this._grade.material.uniforms.uCor.value.set(cor); this._grade.material.uniforms.uOpac.value = opac;
   }
 
   // Personalização: { aerofolio: bool, corRodas: '#hex' | null (original) }. Antes do modelo carregar, só guarda.
