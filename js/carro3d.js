@@ -241,7 +241,8 @@ export class Carro3D {
       if (!baixo) return;
       const mov = Math.hypot(e.clientX - baixo.x, e.clientY - baixo.y), dt = performance.now() - baixo.t;
       baixo = null;
-      if (mov < 6 && dt < 600 && this.zonas) { const p = this._escolher(this._pickLista(e)); this.selecionar(p?.zona ?? null, true, p?.inst ?? null); }
+      // semSelecao = personalizando: toques no carro não abrem peças
+      if (mov < 6 && dt < 600 && this.zonas && !this.semSelecao) { const p = this._escolher(this._pickLista(e)); this.selecionar(p?.zona ?? null, true, p?.inst ?? null); }
     });
     el.addEventListener('pointermove', e => {
       if (e.pointerType !== 'mouse' || e.buttons || !this.raiz) return;

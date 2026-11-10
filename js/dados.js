@@ -40,6 +40,9 @@ const padrao = () => ({
   // geo = { lat, lng, prec } localização do posto (opcional, v8)
   abastecimentos: [],
   ganhos: [],           // ganhos (aplicativo, caronas, ajudas…): { id, inicio, fim, valor }
+  // v9: IPVA, licenciamento e seguro pagos: { id, doc: ipva | licenciamento | seguro, ano, data (do pagamento), valor }
+  // cada pagamento entra em Despesas na data em que foi pago (cotas/parcelas = um lançamento cada)
+  pagamentos: [],
   lembretes: {}, // overrides { id: { km, meses } }
   // vencimentos (data aaaa-mm-dd vazia = não cadastrado) · dispensado = IPVA isento / sem seguro (sem alerta)
   documentos: { ipva: { venc: '', valor: '', dispensado: false }, licenciamento: { venc: '' }, seguro: { venc: '', seguradora: '', dispensado: false }, cnh: { venc: '' } },
@@ -144,6 +147,22 @@ export function atualizarDocumento(k, campos) {
 }
 export const ganhosOrdenados = () => [...estado.ganhos].sort((a, b) => (b.fim || '').localeCompare(a.fim || ''));
 
+// ── Pagamentos de documentos (IPVA, licenciamento, seguro) ──
+export function salvarPagamento(p) {
+  p.id ||= novoId('p');
+  const i = estado.pagamentos.findIndex(x => x.id === p.id);
+  if (i >= 0) estado.pagamentos[i] = p; else estado.pagamentos.push(p);
+  salvar();
+  return p;
+}
+export function excluirPagamento(id) {
+  estado.pagamentos = estado.pagamentos.filter(p => p.id !== id);
+  salvar();
+}
+export const pagamentosOrdenados = doc => estado.pagamentos.filter(p => !doc || p.doc === doc)
+  .sort((a, b) => (b.data || '').localeCompare(a.data || '') || (+b.ano || 0) - (+a.ano || 0));
+const NOME_DOC = { ipva: 'IPVA', licenciamento: 'Licenciamento', seguro: 'Seguro' };
+
 export function salvarRegistro(reg) {
   reg.id ||= novoId('r');
   const i = estado.registros.findIndex(r => r.id === reg.id);
@@ -205,7 +224,7 @@ export async function importarJSON(texto) {
   const d = JSON.parse(texto);
   if (!d || !Array.isArray(d.registros)) throw new Error('Arquivo não parece um backup do Lancer Club 67.');
   if (d.anexos) await Anexos.importar(d.anexos);
-  estado = completar({ veiculo: d.veiculo, registros: d.registros, abastecimentos: d.abastecimentos || [], ganhos: d.ganhos || [],
+  estado = completar({ veiculo: d.veiculo, registros: d.registros, abastecimentos: d.abastecimentos || [], ganhos: d.ganhos || [], pagamentos: d.pagamentos || [],
     documentos: d.documentos, lembretes: d.lembretes || {}, config: { ...(d.config || estado.config), ultimoBackup: hoje() } });
   salvar();
 }
@@ -217,6 +236,9 @@ export function exportarCSV() {
   }
   for (const a of abastecimentosOrdenados()) {
     linhas.push([a.data, a.km || '', 'abastecimento', `Abastecimento ${a.combustivel}`, '', `${(+a.litros || 0).toFixed(3)} L a R$ ${(+a.preco || 0).toFixed(3)}/L`, (+a.total || 0).toFixed(2), '0.00', (+a.total || 0).toFixed(2), a.posto || '', '']);
+  }
+  for (const p of pagamentosOrdenados()) {
+    linhas.push([p.data, '', 'documento', `${NOME_DOC[p.doc] || p.doc} ${p.ano || ''}`.trim(), '', '', (+p.valor || 0).toFixed(2), '0.00', (+p.valor || 0).toFixed(2), p.doc === 'seguro' ? estado.documentos.seguro.seguradora || '' : '', '']);
   }
   const csv = linhas.map(l => l.map(c => '"' + String(c ?? '').replace(/"/g, '""') + '"').join(';')).join('\r\n');
   return new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
