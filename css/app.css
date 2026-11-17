@@ -1205,3 +1205,223 @@ body.fab-aberto #pinos, body.personalizando #pinos { visibility: hidden; }
   .nav-item { padding: 10px 2px; }
   .fab { width: 48px; height: 48px; }
 }
+
+/* ══ v10 ═════════════════════════════════════════════════════════════ */
+/* Menu superior no mesmo visual da barra inferior (cartão com fundo, cantos e sombra), fonte de menu de jogo
+   (Barlow Condensed itálica), vizinhos esmaecidos nas pontas e setas transparentes. */
+:root { --fonte-menu: 'Barlow Condensed', 'Arial Narrow', Inter, sans-serif; --menu-fundo: color-mix(in srgb, var(--sup) 88%, transparent);
+  --menu-borda: color-mix(in srgb, var(--borda) 75%, transparent); --brilho-acento: rgba(47, 125, 255, .45); }
+.carrossel { background: var(--menu-fundo); -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2);
+  border: 1px solid var(--menu-borda); border-radius: 22px; box-shadow: var(--sombra); padding: 2px 4px 7px; grid-template-columns: 38px minmax(0, 1fr) 38px; }
+.car-seta { width: 34px; height: 34px; background: none; color: var(--txt); opacity: .36; -webkit-backdrop-filter: none; backdrop-filter: none; transition: opacity .15s, color .15s, transform .15s; }
+.car-seta:hover { background: none; }
+@media (hover: hover) { .car-seta:hover { opacity: .9; color: var(--acento); } }
+.car-seta:active { opacity: 1; color: var(--acento); transform: scale(.86); }
+.car-seta svg { width: 22px; height: 22px; stroke-width: 2.4; }
+.car-pista { height: 54px; }
+.car-titulo { color: var(--txt); max-width: 78%; }
+.car-titulo small { font: 700 10px/1.1 Inter, sans-serif; letter-spacing: .22em; }
+/* sem reticências: o JS diminui a fonte até caber e, no limite, quebra em duas linhas (.duas) */
+.car-titulo b { display: block; font: italic 700 26px/1.02 var(--fonte-menu); letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: clip; text-shadow: none; padding: 1px 3px 0; }
+.car-titulo b::after { height: 3px; margin: 3px auto 0; width: 64%; box-shadow: 0 0 10px var(--brilho-acento); }
+.car-titulo b.duas { white-space: normal; font-size: 17px; line-height: .98; text-wrap: balance; }
+.car-vizinho { font: italic 600 14px var(--fonte-menu); color: var(--txt3); opacity: .6; line-height: 54px; }
+.car-pontos { margin-top: 0; }
+
+/* Subitens da região (em pé): uma fileira só, com rolagem lateral e esmaecida nas pontas — nunca cobre o carro */
+.chips { top: var(--chips-top, 150px); left: 0; right: 0; transform: none; width: auto; max-width: 680px; margin: 0 auto; pointer-events: none;
+  flex-wrap: nowrap; justify-content: flex-start; gap: 8px; padding: 2px 16px 8px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 16px), transparent); mask-image: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 16px), transparent); }
+.chips::-webkit-scrollbar { display: none; }
+.chips.vazio { display: none; }
+.chips button:first-child { margin-left: auto; } .chips button:last-child { margin-right: auto; }   /* centraliza quando cabe */
+.chips button { pointer-events: auto; flex: none; white-space: nowrap; font: italic 600 15.5px/1 var(--fonte-menu); text-transform: uppercase; letter-spacing: .03em;
+  padding: 9px 16px 8px; border-radius: 999px; background: var(--menu-fundo); color: var(--txt2); border: 1px solid var(--menu-borda);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .12); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); transition: color .15s, border-color .15s, box-shadow .15s; }
+.chips button:hover { background: var(--menu-fundo); color: var(--txt); }
+.chips button.on { background: var(--menu-fundo); color: var(--txt); border-color: var(--acento); box-shadow: 0 0 0 1px var(--acento), 0 0 16px var(--brilho-acento); }
+@media (min-width: 761px) { body.com-painel .chips { left: 0; right: 484px; width: auto; } }
+@media (max-width: 760px) {
+  .carrossel { grid-template-columns: 34px minmax(0, 1fr) 34px; }
+  .car-seta { width: 32px; height: 32px; }
+  .car-pista { height: 52px; }
+  .car-titulo b { font-size: 24px; }
+  .car-titulo b.duas { font-size: 16.5px; }
+  .car-vizinho { font-size: 13px; line-height: 52px; }
+  .chips button { font-size: 15px; padding: 8px 14px 7px; }
+}
+
+/* Telas largas (deitado): subitens numa lista vertical à esquerda, colada no menu, com marcador azul no escolhido;
+   o carro fica à direita dela. Painel de alertas do tamanho dos avisos (sem sobra quando há poucos). */
+@media (orientation: landscape) and (min-aspect-ratio: 4/3) {
+  .chips, body.com-painel .chips { left: calc(max(12px, env(safe-area-inset-left)) + var(--trilho) + 14px); right: auto; width: auto; max-width: 250px; margin: 0;
+    flex-direction: column; align-items: stretch; gap: 2px; padding: 0; overflow: visible; -webkit-mask-image: none; mask-image: none; }
+  .chips button { margin: 0 !important; text-align: left; white-space: normal; background: none; border: 0; border-left: 3px solid transparent; border-radius: 0 10px 10px 0;
+    box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; font-size: 17px; font-weight: 700; line-height: 1.05; padding: 7px 14px 6px 12px; color: var(--cena-txt); opacity: .72;
+    text-shadow: 0 1px 8px var(--cena-brilho); }
+  .chips button:hover { background: none; opacity: .9; }
+  .chips button.on { opacity: 1; border-left-color: var(--acento); box-shadow: none; background: linear-gradient(90deg, color-mix(in srgb, var(--acento) 24%, transparent), transparent); }
+  /* uma linha só: as luzes encolhem e quebram dentro do próprio bloco se faltar espaço (o painel cresce para baixo) */
+  .cluster { flex: 0 1 auto; flex-wrap: nowrap; max-width: none; }
+  .luzes { flex: 0 1 auto; min-width: 0; }
+  .luzes-pista { flex: 0 1 auto; }
+}
+@media (orientation: landscape) and (min-aspect-ratio: 4/3) and (max-width: 1199px) { body.com-painel .chips { display: none; } }
+@media (orientation: landscape) and (min-aspect-ratio: 4/3) and (max-height: 440px) {
+  .chips button { font-size: 15.5px; padding: 5px 12px 4px 10px; }
+  .car-pista { height: 46px; } .car-vizinho { line-height: 46px; }
+  .car-titulo b { font-size: 22px; }
+}
+
+/* Registrar serviço: tirar foto na hora ou escolher da galeria; zona definida pelos serviços */
+.foto-botoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.foto-botoes .foto-add { display: inline-flex; align-items: center; gap: 6px; }
+.foto-botoes svg { width: 17px; height: 17px; }
+.zona-nota { display: block; margin-top: 3px; font-size: 11.5px; font-weight: 600; color: var(--acento); }
+
+/* Calibragem dos pneus: cartão flutuante embaixo da luz do painel (setinha apontando para ela) */
+.calib-pop { position: fixed; z-index: 30; width: min(340px, calc(100vw - 16px)); display: flex; flex-direction: column; background: var(--sup); color: var(--txt);
+  border-radius: 18px; box-shadow: var(--sombra); animation: desce .2s cubic-bezier(.2, .8, .2, 1); }
+.calib-pop::before { content: ''; position: absolute; top: -6px; left: calc(var(--seta, 50%) - 7px); width: 14px; height: 14px; background: var(--sup); transform: rotate(45deg); border-radius: 3px 0 0 0; }
+.cp-cab { position: relative; display: flex; align-items: center; gap: 10px; padding: 12px 10px 8px 12px; }
+.cp-cab .luz { background: #0b1119; width: 38px; height: 38px; border-radius: 10px; flex: none; }
+.cp-cab .luz-sem-registro { color: rgba(255, 255, 255, .45); }
+.cp-cab div { flex: 1; min-width: 0; line-height: 1.25; }
+.cp-cab b { display: block; font-size: 14.5px; }
+.cp-cab small { color: var(--txt3); font-size: 12px; }
+.cp-x { flex: none; width: 34px; height: 34px; border: 0; border-radius: 50%; background: var(--sup2); display: grid; place-items: center; color: var(--txt2); }
+.cp-x svg { width: 17px; height: 17px; }
+.cp-rolar { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 12px 12px; display: flex; flex-direction: column; gap: 9px; }
+.cp-rolar > * { flex: none; }   /* tela baixa: o cartão rola, a tabela não encolhe */
+.cp-int { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--txt2); }
+.cp-int-btn { display: inline-flex; align-items: center; gap: 5px; border: 0; background: none; padding: 2px 0; color: var(--txt2); font-size: 12px; font-weight: 600; }
+.cp-int-btn svg { width: 14px; height: 14px; color: var(--acento); }
+.cp-seg { display: flex; align-items: center; gap: 3px; background: var(--sup2); border-radius: 999px; padding: 3px; }
+.cp-seg button { border: 0; background: none; border-radius: 999px; padding: 4px 9px; font-size: 12.5px; font-weight: 700; color: var(--txt2); }
+.cp-seg button.ativo { background: var(--acento); color: #fff; }
+.cp-seg small { padding: 0 6px 0 2px; color: var(--txt3); font-size: 11.5px; }
+.cp-tab { display: flex; flex-direction: column; border: 1px solid var(--borda); border-radius: 12px; overflow: hidden; }
+.cp-linha { display: grid; grid-template-columns: minmax(0, 1fr) 86px auto; align-items: center; gap: 8px; padding: 7px 10px; }
+.cp-linha + .cp-linha { border-top: 1px solid var(--borda); }
+.cp-linha:last-child { background: var(--sup2); }
+.cp-rot { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.cp-rot b { font-size: 13px; } .cp-rot small { font-size: 11px; color: var(--txt3); white-space: nowrap; }
+.cp-campo { display: flex; align-items: baseline; gap: 4px; border: 1px solid var(--borda); background: var(--sup); border-radius: 9px; padding: 2px 8px; }
+.cp-campo input { width: 100%; min-width: 0; border: 0; background: none; outline: none; font: 700 18px var(--mono); padding: 3px 0; text-align: right; -moz-appearance: textfield; }
+.cp-campo input::-webkit-inner-spin-button, .cp-campo input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.cp-campo em { font-style: normal; font-size: 11px; font-weight: 700; color: var(--txt3); }
+.cp-ref { font-size: 10.5px; line-height: 1.3; color: var(--txt3); text-align: right; white-space: nowrap; }
+.cp-nota { margin: 0; font-size: 11.5px; color: var(--txt3); line-height: 1.35; }
+.cp-rodape { display: flex; align-items: flex-end; gap: 8px; }
+.cp-data { display: flex; flex-direction: column; gap: 2px; font-size: 11px; font-weight: 600; color: var(--txt3); }
+.cp-data input { border: 1px solid var(--borda); background: var(--sup2); border-radius: 9px; padding: 6px 6px; font-size: 13px; max-width: 138px; }
+.cp-rodape .btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 12px; font-weight: 700; }
+.cp-rodape .btn svg { width: 18px; height: 18px; stroke-width: 2.6; }
+
+/* Personalizar → Pneus: largura / perfil / aro em listas fechadas + diferença para o original */
+.perso-sub.perso-pneu { flex-direction: column; align-items: stretch; gap: 6px; overflow: visible; padding: 2px 4px 8px; }
+.pp-campos { display: flex; align-items: flex-end; gap: 6px; }
+.pp-campo { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.perso-sub .pp-campo small { font-size: 10px; font-weight: 800; color: var(--txt3); text-transform: uppercase; letter-spacing: .07em; }
+.pp-campo select { width: 100%; border: 1px solid var(--borda); background: var(--sup2); color: var(--txt); border-radius: 10px; padding: 7px 4px; font: 700 15px var(--mono); }
+.pp-barra { padding-bottom: 8px; color: var(--txt3); font-weight: 700; }
+.perso-sub .pp-orig { flex: none; display: block; border: 1px solid var(--borda); background: none; border-radius: 10px; padding: 8px 10px; font-size: 12px; font-weight: 700; color: var(--acento); }
+.perso-sub .pp-orig[disabled] { color: var(--txt3); opacity: .55; cursor: default; }
+.pp-info { margin: 0; font-size: 11.5px; color: var(--txt2); line-height: 1.35; }
+.pp-info b { font-family: var(--mono); }
+
+/* ══ v10.1 ═══════════════════════════════════════════════════════════ */
+/* Personalizar → Pneus: em quais rodas (frente e trás / só frente / só trás) e aviso de medida fora de ±3% */
+.pp-eixo { display: flex; gap: 3px; background: var(--sup2); border-radius: 999px; padding: 3px; }
+.perso-sub .pp-eixo button { flex: 1; display: block; border: 0; background: none; border-radius: 999px; padding: 6px 4px; font-size: 12px; font-weight: 700; color: var(--txt2); white-space: nowrap; }
+.perso-sub .pp-eixo button.ativo { background: var(--acento); color: #fff; }
+.pp-aviso { display: flex; gap: 10px; align-items: flex-start; border: 1px solid rgba(255, 178, 31, .55); background: rgba(255, 178, 31, .12); border-radius: 12px; padding: 9px 10px;
+  animation: itemSobe .22s cubic-bezier(.2, .8, .2, 1); }
+.pp-aviso > svg { flex: none; width: 20px; height: 20px; color: #e09400; margin-top: 1px; }
+.pp-aviso div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pp-aviso b { font-size: 12.5px; line-height: 1.3; }
+.perso-sub .pp-aviso small { font-size: 11.5px; line-height: 1.35; color: var(--txt2); white-space: normal; }
+.pp-aviso span { display: flex; gap: 8px; justify-content: flex-end; margin-top: 2px; }
+.perso-sub .pp-aviso .btn { flex: none; display: inline-block; padding: 6px 12px; font-size: 12.5px; border-radius: 10px; }
+/* histórico da zona: registro anotado em outra zona que aparece aqui por um serviço programado */
+.reg-via { display: flex; align-items: center; gap: 6px; margin: -2px 0 6px; font-size: 11.5px; color: var(--txt3); }
+.reg-via svg { width: 14px; height: 14px; flex: none; color: var(--acento); }
+.reg-via b { color: var(--txt2); }
+
+/* ══ v10.1.1 ═════════════════════════════════════════════════════════ */
+/* Subitens em fileira (em pé): carrossel que arrasta (dedo ou mouse) e esmaece só o lado que ainda tem itens */
+.chips { pointer-events: auto; touch-action: pan-x; scroll-snap-type: x proximity; -webkit-mask-image: none; mask-image: none; cursor: grab; }
+.chips.arrastando { cursor: grabbing; scroll-snap-type: none; }
+.chips.arrastando button { pointer-events: none; }
+.chips button { scroll-snap-align: center; }
+.chips.mais-dir { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 44px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 44px), transparent); }
+.chips.mais-esq { -webkit-mask-image: linear-gradient(90deg, transparent, #000 44px); mask-image: linear-gradient(90deg, transparent, #000 44px); }
+.chips.mais-esq.mais-dir { -webkit-mask-image: linear-gradient(90deg, transparent, #000 44px, #000 calc(100% - 44px), transparent); mask-image: linear-gradient(90deg, transparent, #000 44px, #000 calc(100% - 44px), transparent); }
+@media (orientation: landscape) and (min-aspect-ratio: 4/3) { .chips { cursor: auto; scroll-snap-type: none; } }
+/* setas duplas do menu de regiões */
+.car-seta svg { width: 21px; height: 21px; stroke-width: 2.2; }
+/* voltar à vista da zona (acima do "carro inteiro") */
+.cam-zona svg { width: 23px; height: 23px; }
+.ico-perso { stroke-width: 1.8; }
+
+/* Personalizar: menu vertical do aerofólio, logo acima do item (setinha apontando para ele) */
+.perso-flut { position: absolute; z-index: 3; display: flex; flex-direction: column; gap: 2px; min-width: 190px; padding: 6px; background: var(--sup); border-radius: 16px;
+  box-shadow: var(--sombra); animation: itemSobe .22s cubic-bezier(.2, .8, .2, 1); }
+.perso-flut::after { content: ''; position: absolute; top: 100%; left: calc(var(--seta, 50%) - 7px); border: 7px solid transparent; border-top-color: var(--sup); }
+.perso-flut button { display: flex; align-items: center; gap: 10px; border: 0; background: none; border-radius: 11px; padding: 8px 10px; text-align: left; color: var(--txt); font-weight: 600; font-size: 13.5px; }
+.perso-flut button > svg:first-child { width: 22px; height: 22px; color: var(--txt2); flex: none; }
+.perso-flut button span { flex: 1; white-space: nowrap; }
+.perso-flut button > svg:last-child:not(:first-child) { width: 18px; height: 18px; color: var(--acento); stroke-width: 2.6; }
+.perso-flut button:hover { background: var(--sup2); }
+.perso-flut button.ativo { background: var(--acento-suave); }
+.perso-flut button.ativo > svg:first-child { color: var(--acento); }
+.perso-flut button.bloqueado { opacity: .5; cursor: not-allowed; }
+.perso-flut small { font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: var(--txt3); background: var(--sup2); border-radius: 999px; padding: 2px 6px; }
+/* Personalizar → Placa: posição (centro, lado), fundo (em breve) e sem placa */
+.perso-placa button { position: relative; }
+.perso-sub .pl-ico { width: 46px; height: 32px; border-radius: 9px; border: 0; box-shadow: none; display: grid; place-items: center; background: var(--sup2); color: var(--txt2); }
+.perso-sub .pl-ico svg { width: 26px; height: 26px; }
+.perso-sub button.ativo .pl-ico { box-shadow: 0 0 0 2.5px var(--acento); color: var(--acento); }
+.perso-placa button.bloqueado { opacity: .5; cursor: not-allowed; }
+.perso-placa em { position: absolute; top: 0; right: 2px; font: 800 8.5px/1 Inter, sans-serif; font-style: normal; text-transform: uppercase; letter-spacing: .05em; color: var(--txt3); background: var(--sup); padding: 2px 4px; border-radius: 999px; }
+
+/* Personalizar → Cor: balão com a roda de cores (matiz × saturação), brilho, RGB e código html.
+   Em pé, fica acima do painel (o carro se enquadra acima dele); deitado, à esquerda (o carro vai para a direita). */
+.cor-pop { position: fixed; z-index: 24; left: 12px; right: 12px; bottom: calc(var(--perso-topo, 220px) + 12px); margin: 0 auto; width: auto; max-width: 440px;
+  background: var(--sup); color: var(--txt); border-radius: 18px; box-shadow: var(--sombra); padding: 10px 12px 12px; animation: itemSobe .22s cubic-bezier(.2, .8, .2, 1); }
+.cor-pop::after { content: ''; position: absolute; top: 100%; left: calc(var(--seta, 50%) - 7px); border: 7px solid transparent; border-top-color: var(--sup); }
+.cor-cab { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.cor-cab div { flex: 1; min-width: 0; line-height: 1.2; }
+.cor-cab b { display: block; font-size: 14px; }
+.cor-cab small { color: var(--txt3); font-size: 11.5px; }
+.cor-corpo { display: flex; gap: 12px; align-items: center; }
+.cor-roda { flex: none; width: 124px; height: 124px; border-radius: 50%; touch-action: none; cursor: crosshair; box-shadow: 0 0 0 3px var(--sup), 0 0 0 4px var(--borda); }
+.cor-lado { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
+.cor-lado small { display: block; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: var(--txt3); margin-bottom: 2px; }
+.cor-brilho input { width: 100%; height: 14px; margin: 0; -webkit-appearance: none; appearance: none; border-radius: 999px; background: linear-gradient(90deg, #000, var(--cor-cheia, #fff)); box-shadow: inset 0 0 0 1px var(--borda); }
+.cor-brilho input::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: var(--cor-atual, #fff); border: 3px solid #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .45); }
+.cor-brilho input::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--cor-atual, #fff); border: 3px solid #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .45); }
+.cor-rgb { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+.cor-rgb input, .cor-hex input { width: 100%; min-width: 0; border: 1px solid var(--borda); background: var(--sup2); border-radius: 8px; padding: 5px 6px; font: 600 13.5px var(--mono); color: var(--txt); -moz-appearance: textfield; }
+.cor-rgb input::-webkit-inner-spin-button, .cor-rgb input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.cor-hex input { text-transform: uppercase; padding-left: 30px; background: linear-gradient(var(--cor-atual, #fff), var(--cor-atual, #fff)) 6px 50% / 18px 18px no-repeat, var(--sup2); }
+.cor-fabrica { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; border: 0; background: none; padding: 2px 0; color: var(--acento); font-size: 12.5px; font-weight: 700; }
+.cor-fabrica svg { width: 16px; height: 16px; }
+@media (orientation: landscape) and (min-aspect-ratio: 4/3) {
+  :root { --cor-w: 300px; }
+  .cor-pop { left: calc(max(12px, env(safe-area-inset-left))); right: auto; top: var(--chips-top, 150px); bottom: auto; width: var(--cor-w); margin: 0; max-height: calc(100dvh - var(--chips-top, 150px) - 12px); overflow-y: auto; }
+  .cor-pop::after { display: none; }
+  .cor-corpo { flex-direction: column; align-items: stretch; }
+  .cor-roda { align-self: center; width: 150px; height: 150px; }
+}
+@media (orientation: landscape) and (min-aspect-ratio: 4/3) and (max-height: 440px) {
+  .cor-corpo { flex-direction: row; align-items: center; }
+  .cor-roda { width: 112px; height: 112px; }
+  :root { --cor-w: 340px; }
+}
+
+/* deitado com o balão da cor aberto: o painel de baixo vai para a direita do balão (sem sobrepor em telas estreitas) */
+@media (orientation: landscape) and (min-aspect-ratio: 4/3) {
+  body.cor-aberta .perso-lista { left: calc(max(12px, env(safe-area-inset-left)) + var(--cor-w) + 12px); right: auto; margin: 0;
+    width: min(460px, calc(100vw - var(--cor-w) - 40px)); }
+}
