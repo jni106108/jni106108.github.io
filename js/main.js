@@ -1,5 +1,5 @@
 import { Carro3D } from './carro3d.js';
-import { ZONAS, ZONA_POR_ID, zonaDoGrupo, traduz, videoUrl, VEICULO_BASE, REGIOES, FILTROS, FILTRO_POR_ID } from './zonas.js';
+import { ZONAS, ZONA_POR_ID, zonaDoGrupo, traduz, videoUrl, VEICULO_BASE, REGIOES, FILTROS, FILTRO_POR_ID, LEMBRETES_PADRAO } from './zonas.js';
 import * as D from './dados.js';
 import * as Anexos from './anexos.js';
 
@@ -83,6 +83,10 @@ function mascaraMoeda(el, casas) {
 ICO.nuvem = '<svg viewBox="0 0 24 24"><path d="M7 18.5a4.5 4.5 0 0 1-.6-9 6 6 0 0 1 11.5 1.6A3.8 3.8 0 0 1 17.5 18.5z"/><path d="M12 16v-5.5M9.5 12.5L12 10l2.5 2.5"/></svg>';
 ICO.placa = '<svg viewBox="0 0 24 24"><rect x="2.5" y="7" width="19" height="10" rx="1.5"/><path d="M2.5 9.5h19M6 13.5h3M11 13.5h7"/></svg>';
 ICO.camera = '<svg viewBox="0 0 24 24"><path d="M4 8h3l1.5-2.5h7L17 8h3v11H4z"/><circle cx="12" cy="13.5" r="3.5"/></svg>';
+// v10: galeria de fotos, calibragem (luz de pressão dos pneus, como a do painel) e pneu visto de lado
+ICO.galeria = '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="9.5" r="1.8"/><path d="M3.5 17.5l5-5 4 4 2.5-2.5 5.5 5"/></svg>';
+ICO.calib = '<svg viewBox="0 0 24 24"><path d="M6.2 6.5C4.8 8.2 4 10.4 4 12.8c0 2.4.8 4.6 2.2 6.2h11.6c1.4-1.6 2.2-3.8 2.2-6.2 0-2.4-.8-4.6-2.2-6.3"/><path d="M5.5 19h1.6M9 19h1.6M13.4 19H15M16.9 19h1.6"/><path d="M12 8.2v5.3M12 16.2v.1"/></svg>';
+ICO.pneu = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="1.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.5 1.5M17.2 17.2l1.5 1.5M5.3 18.7l1.5-1.5M17.2 6.8l1.5-1.5"/></svg>';
 ICO.pdfDoc = '<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M8.5 13h7M8.5 16.5h5"/></svg>';
 // v8: arquivo PDF (faixa vermelha), planilha, carimbo com "+", ajustes, localização, informação, filtro e ordenar
 ICO.pdfArq = '<svg viewBox="0 0 24 24" class="ico-pdf"><path d="M15 3H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M15 3v5h5"/><rect x="2.5" y="11.5" width="14" height="7" rx="1.5" fill="#d62828" stroke="none"/><text x="9.5" y="16.9" text-anchor="middle" fill="#fff" stroke="none" font-size="5.6" font-weight="800" font-family="Inter, sans-serif">PDF</text></svg>';
@@ -95,7 +99,13 @@ ICO.funil = '<svg viewBox="0 0 24 24"><path d="M3.5 5h17l-6.5 8v6l-4-2v-4z"/></s
 ICO.ordenar = '<svg viewBox="0 0 24 24"><path d="M7 4v16M3.5 7.5L7 4l3.5 3.5M17 20V4M13.5 16.5L17 20l3.5-3.5"/></svg>';
 ICO.estetica = '<svg viewBox="0 0 24 24"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M18.5 14.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8zM5.5 15.5l.6 1.5 1.5.6-1.5.6-.6 1.5-.6-1.5-1.5-.6 1.5-.6z"/></svg>';
 // v9: pincel (personalizar), confirmar e documentos pagos (despesas)
-ICO.pincel = '<svg viewBox="0 0 24 24"><path d="M18.4 2.6a2 2 0 0 1 2.9 2.9L12 14.8 9.2 12z"/><path d="M9.2 12c-2.5 0-4.2 1.8-4.2 4.2 0 1.6-1.1 2.8-2.5 3.3 1.4 1 3.2 1.5 5 1.5 3.4 0 4.5-2.4 4.5-4.2z"/></svg>';
+// v10.1.1: personalizar = lata de tinta + chave de boca (como os menus de oficina dos jogos de corrida)
+ICO.pincel = '<svg viewBox="0 0 24 24" class="ico-perso"><ellipse cx="7" cy="11.2" rx="4.5" ry="1.6"/><path d="M2.5 11.2v8.1c0 .9 2 1.7 4.5 1.7s4.5-.8 4.5-1.7v-8.1"/><path d="M2.9 10.7c.4-3.5 7.8-3.5 8.2 0"/><path d="M9.6 12.7v2.6"/><path d="M14.2 20.05L18.5 8.9A3.4 3.4 0 0 0 20.59 3.08L19.7 5.32 17.47 4.43 18.35 2.2A3.4 3.4 0 0 0 15.9 7.9L11.4 18.95A1.5 1.5 0 0 0 14.2 20.05z"/></svg>';
+ICO.paleta = '<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.7-.8 1.7-1.6 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.6 1.7-1.6h2A4.6 4.6 0 0 0 21 11c0-4.4-4-8-9-8z"/><circle cx="7.5" cy="11.5" r="1.2"/><circle cx="10" cy="7.5" r="1.2"/><circle cx="14.5" cy="7.5" r="1.2"/></svg>';
+ICO.placaSem = '<svg viewBox="0 0 24 24"><rect x="2.5" y="7" width="19" height="10" rx="1.5"/><path d="M4 18.5L20 5.5"/></svg>';
+ICO.placaLado = '<svg viewBox="0 0 24 24"><path d="M2.5 9h19v8h-19z" opacity=".35"/><rect x="3.5" y="11" width="8" height="4.5" rx="1"/></svg>';
+ICO.placaCentro = '<svg viewBox="0 0 24 24"><path d="M2.5 9h19v8h-19z" opacity=".35"/><rect x="8" y="11" width="8" height="4.5" rx="1"/></svg>';
+ICO.placaFundo = '<svg viewBox="0 0 24 24"><rect x="2.5" y="7" width="19" height="10" rx="1.5"/><path d="M2.5 10h19M6 14l3-2 3 2 3-2 3 2"/></svg>';
 ICO.check = '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 ICO.recibo = '<svg viewBox="0 0 24 24"><path d="M6 2.5h12v19l-3-2-3 2-3-2-3 2z"/><path d="M9 7.5h6M9 11h6M9 14.5h3.5"/></svg>';
 // Documentos com vencimento: [id, nome, ícone, campo extra]
@@ -153,6 +163,31 @@ const urlManual = pagina => {
 // Novidades de cada versão (a primeira da lista é a atual). Aparece em Configurações → Novidades e abre
 // sozinha na primeira vez que o app é aberto numa versão nova. Para publicar uma versão: acrescente no topo.
 const NOVIDADES = [
+  { versao: '10.1.1', data: '17/11/2026', titulo: 'Personalizar com mais opções', itens: [
+    'Personalizar → Cor: roda de cores, brilho, RGB e código html, num balão que não cobre o carro (só no 3D; a cor de fábrica fica em Veículo).',
+    'Aerofólio num menu logo acima da opção: sem, GT, Duckbill e Evolution (os dois últimos em breve).',
+    'Placa: centro, lado, sem placa e fundo personalizado (em breve).',
+    'A câmera vai para o que está sendo personalizado e volta ao carro inteiro ao fechar; personalizar começa sem filtro.',
+    'Novo ícone de personalizar: lata de tinta e chave de boca.',
+    'Subitens do menu em fileira: arraste para os lados (dedo ou mouse) para ver os escondidos.',
+    'Setas duplas no menu de regiões e botão para voltar à vista da zona (acima do “carro inteiro”).',
+  ] },
+  { versao: '10.1', data: '17/11/2026', titulo: 'Ajustes nos pneus', itens: [
+    'Pneus com desenho da banda de rodagem em qualquer medida e sempre encaixados no aro.',
+    'Pneus na frente e atrás, só na frente ou só atrás.',
+    'Qualquer combinação de largura, perfil e aro; fora de ±3% do original aparece um aviso para confirmar.',
+    'Painel de alertas: só acendem as luzes em alerta ou vencidas.',
+    'Histórico da zona mostra também os serviços programados dela anotados em outra zona (ex.: óleo + rodízio aparece em Rodas).',
+  ] },
+  { versao: '10', data: '17/11/2026', titulo: 'Pneus e menu novo', itens: [
+    'Aviso de calibragem dos pneus no painel (âmbar 2 dias antes, vermelho depois): toque na luz para ver a tabela do manual e marcar como calibrado.',
+    'Personalizar → Pneus: largura, perfil e aro só com medidas que servem no Lancer; o 3D muda o pneu e o aro na hora.',
+    'Menu de regiões no visual da barra inferior, com fonte de menu de jogo e títulos sem cortes (“…”).',
+    'Subitens numa fileira com rolagem (em pé) ou numa lista à esquerda (deitado), sem cobrir o carro.',
+    'Zoom de cada região na peça escolhida, aproveitando a tela em pé e deitada.',
+    'Anotar serviço: “Tirar foto” abre a câmera; a zona do carro acompanha os serviços programados marcados.',
+    'Livro de bordo ao lado do botão + e painel de alertas do tamanho dos avisos nas telas deitadas.',
+  ] },
   { versao: '9.1', data: '10/11/2026', titulo: 'Ajustes de tela', itens: [
     'Telas largas (tablet, multimídia, PC): menu vertical à esquerda com o + embaixo (abre para o lado), filtro no canto inferior direito e o carro à direita.',
     'Grade de engenharia deitada no chão, na altura dos pneus, sumindo suavemente nas bordas (claro e escuro).',
@@ -271,7 +306,7 @@ async function iniciar() {
   catch (e) { $('#carregando-txt').textContent = 'Não foi possível carregar o catálogo (data/catalogo.json).'; window.lancerAviso?.('Verifique a internet. No PC, abra pelo "Iniciar Lancer Garagem.bat" (servidor local).'); return; }
   $('#carregando-txt').textContent = 'Carregando modelo 3D…';
   carro = new Carro3D($('#cena'), {
-    cor: D.getEstado().veiculo.cor,
+    cor: corCarro(),   // v10.1.1: a cor personalizada, se houver
     aoSelecionar: id => abrirZona(id),
     aoPassar: mostrarRotulo,
     aoProgresso: progressoModelo,
@@ -339,6 +374,12 @@ function montarInterface() {
   montarCarrossel();
   ajustarMargem();
   atualizarBarra();
+  // cartão da calibragem: guarda o que foi digitado (o cartão é redesenhado ao trocar o intervalo)
+  $('#cor-pop').addEventListener('input', onCorInput);   // balão da cor personalizada
+  $('#calib-pop').addEventListener('input', e => { const k = e.target.dataset.calib; if (k && ui.calib) (ui.calib.valores ||= {})[k] = e.target.value; });
+  // a fonte do menu (Barlow Condensed) chega depois: reajusta o título quando ela carregar
+  document.fonts?.ready.then(() => { ajustarTitulo(); ajustarMargem(); });
+  ui.montado = true;
 }
 
 // Painel superior: hodômetro + luzes de alerta (redesenhado sempre que os dados mudam)
@@ -437,13 +478,114 @@ function renderOdoPop() {
 // Sem carrossel: se não couberem ao lado do hodômetro, descem para uma linha própria e o painel cresce,
 // para nenhum alerta ficar escondido.
 function renderLuzes() {
-  const al = alertas();
+  // v10.1: no painel só acendem as luzes em alerta (âmbar) ou vencidas (vermelho); "sem registro" fica só na lista de alertas
+  const al = alertas().filter(l => l.status === 'vencido' || l.status === 'proximo');
   $('#luzes').style.setProperty('--n', Math.max(1, al.length));
   $('#luzes-pista').innerHTML = al.length ? al.map(l => {
     const dica = `${l.nome}: ${textoAlerta(l)}`;
-    return `<button class="luz luz-${l.status}" data-acao="alertas" role="listitem" title="${esc(dica)}" aria-label="${esc(dica)}">${iconeAlerta(l)}</button>`;
+    // calibragem: abre o cartão flutuante logo abaixo da luz (sem trocar de tela)
+    return `<button class="luz luz-${l.status}" data-acao="${l.tipo === 'calib' ? 'calibragem' : 'alertas'}" data-luz="${l.id}" role="listitem" title="${esc(dica)}" aria-label="${esc(dica)}">${iconeAlerta(l)}</button>`;
   }).join('') : `<button class="luz luz-ok" data-acao="alertas" role="listitem" title="Nenhum alerta: tudo em dia">${ICO.ok}</button>`;
   requestAnimationFrame(ajustarCluster);
+  if (!$('#calib-pop').hidden) requestAnimationFrame(posicionarCalib);
+}
+
+// ── Pneus (v10) ───────────────────────────────────────────
+// Manual 9-11: pneu 215/45 R18 89W com 32 psi (220 kPa · 2,2 kgf/cm²) na frente e atrás; estepe compacto T125/70 D16 com
+// 60 psi (420 kPa · 4,2 kgf/cm²). O manual traz um valor só, para qualquer carga.
+const PNEU_ORIGINAL = '215/45R18';
+const PRESSAO = { diant: 32, tras: 32, estepe: 60 };
+const PRESSAO_REF = { diant: '220 kPa · 2,2 kgf/cm²', tras: '220 kPa · 2,2 kgf/cm²', estepe: '420 kPa · 4,2 kgf/cm²' };
+// v10.1: largura, perfil e aro livres dentro das listas (medidas de mercado de aro 16 a 20). Fora da equivalência de ±3% do
+// diâmetro original (650,7 mm), a regra das borracharias, aparece um aviso pedindo confirmação (pode raspar, muda o velocímetro).
+// De fábrica: 205/60 R16 (HL/HL-E) e 215/45 R18 (GT/HL-T).
+const lerMedida = s => { const m = String(s || '').match(/^(\d{3})\/(\d{2})R(\d{2})$/); return m ? { largura: +m[1], perfil: +m[2], aro: +m[3] } : null; };
+const medidaTexto = m => `${m.largura}/${m.perfil}R${m.aro}`;
+const fmtMedida = s => String(s || '').replace('R', ' R');
+const diametroPneu = m => m.aro * 25.4 + 2 * m.largura * m.perfil / 100;   // mm
+const D_ORIGINAL = diametroPneu(lerMedida(PNEU_ORIGINAL));
+const OPCOES_PNEU = { largura: [185, 195, 205, 215, 225, 235, 245, 255, 265], perfil: [30, 35, 40, 45, 50, 55, 60, 65], aro: [16, 17, 18, 19, 20] };
+const LIMITE_EQUIV = 0.03;
+const difPneu = s => diametroPneu(lerMedida(s || PNEU_ORIGINAL)) / D_ORIGINAL - 1;
+// medidas salvas (dianteiros e traseiros); sem pneuTras (v10) = a mesma da frente
+const valida = s => (lerMedida(s) ? s : null);
+function medidasPneu(c = cfg()) {
+  const diant = valida(c.pneu), tras = c.pneuTras === undefined ? diant : valida(c.pneuTras);
+  return { diant: diant || PNEU_ORIGINAL, tras: tras || PNEU_ORIGINAL };
+}
+// as mesmas medidas no formato da config (null = original), com os traseiros sempre preenchidos
+function pneusCfg(c = cfg()) {
+  const { diant, tras } = medidasPneu(c), sem = s => (s === PNEU_ORIGINAL ? null : s);
+  return { pneu: sem(diant), pneuTras: sem(tras) };
+}
+// Especificações da zona Rodas: medida personalizada (por eixo) e a original
+function textoPneuSpec(orig) {
+  const { diant, tras } = medidasPneu();
+  if (diant === PNEU_ORIGINAL && tras === PNEU_ORIGINAL) return orig;
+  return `${diant === tras ? fmtMedida(diant) : `diant. ${fmtMedida(diant)} · tras. ${fmtMedida(tras)}`} (personalizado · original ${orig})`;
+}
+
+// ── Calibragem dos pneus (v10): aviso no painel; âmbar 2 dias antes do fim do intervalo, vermelho depois.
+// Só a última calibragem fica guardada (config.calibragem); marcar como calibrado apaga a luz.
+const INTERVALOS_CALIB = [7, 10, 15, 21, 30];
+function statusCalibragem() {
+  const c = cfg(), int = +c.calibragemDias || 15, dias = diasDesde(c.calibragem?.data);
+  const status = dias === null ? 'sem-registro' : dias > int ? 'vencido' : dias >= int - 2 ? 'proximo' : 'ok';
+  return { status, dias, int };
+}
+function abrirCalibragem() {
+  fecharMenus();
+  if (!$('#modal').hidden) fecharModal();
+  ui.calib = { editarInt: false };
+  renderCalib();
+  $('#calib-pop').hidden = false;
+  posicionarCalib();
+}
+// logo abaixo da luz de calibragem (ou do painel, quando a luz está apagada); a setinha aponta para a luz
+function posicionarCalib() {
+  const pop = $('#calib-pop'); if (pop.hidden) return;
+  const luz = $('#luzes-pista [data-luz="calib"]') || $('#luzes'), r = luz.getBoundingClientRect(), w = pop.offsetWidth;
+  const x = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, window.innerWidth - w - 8)), y = r.bottom + 12;
+  pop.style.left = x + 'px'; pop.style.top = y + 'px';
+  pop.style.maxHeight = `calc(100dvh - ${y + 12}px)`;
+  pop.style.setProperty('--seta', Math.max(18, Math.min(w - 18, r.left + r.width / 2 - x)) + 'px');
+}
+function renderCalib() {
+  const c = cfg(), cal = statusCalibragem(), u = c.calibragem, med = medidasPneu(), fora = [med.diant, med.tras].filter(s => s !== PNEU_ORIGINAL);
+  const tmp = ui.calib.valores || {}, val = k => tmp[k] ?? u?.[k] ?? PRESSAO[k];
+  const quando = cal.dias === null ? 'Nenhuma calibragem anotada' : cal.dias === 0 ? 'Última calibragem hoje' : `Última calibragem há ${cal.dias} dia${cal.dias > 1 ? 's' : ''}`;
+  const falta = cal.int - (cal.dias ?? 0);
+  const sub = cal.dias === null ? 'Marque quando calibrar para o app começar a contar'
+    : `${D.dataBR(u.data)} · ${cal.status === 'vencido' ? `atrasada ${-falta} dia${-falta > 1 ? 's' : ''}` : falta === 0 ? 'calibrar hoje' : `próxima em ${falta} dia${falta > 1 ? 's' : ''}`}`;
+  const linha = (k, nome, medida) => `<div class="cp-linha">
+      <span class="cp-rot"><b>${nome}</b><small>${medida}</small></span>
+      <span class="cp-campo"><input type="number" inputmode="numeric" min="10" max="99" data-calib="${k}" value="${esc(val(k))}" aria-label="${nome}: pressão em psi"><em>psi</em></span>
+      <span class="cp-ref">manual ${PRESSAO[k]} psi<br>${PRESSAO_REF[k]}</span></div>`;
+  $('#calib-pop').innerHTML = `
+    <div class="cp-cab"><span class="luz luz-${cal.status === 'ok' ? 'ok' : cal.status}">${ICO.calib}</span>
+      <div><b>${quando}</b><small>${sub}</small></div>
+      <button class="cp-x" data-acao="calib-fechar" title="Fechar" aria-label="Fechar">${ICO.x}</button></div>
+    <div class="cp-rolar">
+    <div class="cp-int">${ui.calib.editarInt
+      ? `<span>Avisar a cada</span><div class="cp-seg" role="radiogroup" aria-label="Intervalo do aviso">${INTERVALOS_CALIB.map(d => `<button role="radio" aria-checked="${cal.int === d}" class="${cal.int === d ? 'ativo' : ''}" data-calib-dias="${d}">${d}</button>`).join('')}<small>dias</small></div>`
+      : `<button class="cp-int-btn" data-acao="calib-int" title="Ajustar o intervalo do aviso">Aviso a cada ${cal.int} dias ${ICO.lapis}</button>`}</div>
+    <div class="cp-tab">
+      ${linha('diant', 'Dianteiros', fmtMedida(med.diant))}${linha('tras', 'Traseiros', fmtMedida(med.tras))}${linha('estepe', 'Estepe', 'T125/70 D16')}
+    </div>
+    <p class="cp-nota">${!fora.length ? 'Com os pneus frios. O manual traz o mesmo valor para qualquer carga (pág. 9-11).'
+      : `Medida ${[...new Set(fora)].map(fmtMedida).join(' e ')} (fora do manual): confirme a pressão na etiqueta da coluna da porta do motorista.`}</p>
+    <div class="cp-rodape"><label class="cp-data">Data<input type="date" data-calib="data" value="${esc(tmp.data || D.hoje())}" max="${D.hoje()}"></label>
+      <button class="btn pri" data-acao="calib-feito">${ICO.check} Marcar como calibrado</button></div>
+    </div>`;
+}
+function salvarCalibragem() {
+  const pop = $('#calib-pop'), v = k => pop.querySelector(`[data-calib="${k}"]`).value;
+  const reg = { data: v('data') || D.hoje(), diant: +v('diant') || PRESSAO.diant, tras: +v('tras') || PRESSAO.tras, estepe: +v('estepe') || PRESSAO.estepe };
+  if (reg.data > D.hoje()) reg.data = D.hoje();
+  fecharMenus();
+  D.atualizarConfig({ calibragem: reg });
+  const prox = statusCalibragem();
+  toast(`Calibragem anotada · próximo aviso em ${Math.max(0, prox.int - 2 - prox.dias)} dias`);
 }
 // Painel com mais de uma linha: avisa o CSS (separador) e empurra o menu de regiões para baixo
 function ajustarCluster() {
@@ -458,17 +600,18 @@ function ajustarCluster() {
 }
 
 // Ícone, texto, ação e carimbo de cada alerta (manutenção, documento, hodômetro, backup)
-const iconeAlerta = l => ({ lembrete: SICO[l.id], doc: DOCS_POR_ID[l.doc]?.ico, km: ICO.hodometro, backup: ICO.nuvem }[l.tipo] || ICO.chave);
+const iconeAlerta = l => ({ lembrete: SICO[l.id], doc: DOCS_POR_ID[l.doc]?.ico, km: ICO.hodometro, backup: ICO.nuvem, calib: ICO.calib }[l.tipo] || ICO.chave);
 function textoAlerta(l) {
   const ha = d => (d > 900 ? 'muito tempo' : d === 1 ? '1 dia' : d + ' dias');
   switch (l.tipo) {
+    case 'calib': return l.dias === null ? 'sem registro · toque para anotar' : `última há ${ha(l.dias)}${l.status === 'vencido' ? ' · atrasada' : ''}`;
     case 'doc': return l.dias < 0 ? `venceu em ${D.dataBR(l.venc)} (há ${ha(-l.dias)})` : l.dias === 0 ? 'vence hoje' : `vence em ${D.dataBR(l.venc)} (em ${ha(l.dias)})`;
     case 'km': return `última leitura há ${ha(l.dias)} · toque para atualizar`;
     case 'backup': return l.dias === null ? 'nenhum backup feito ainda' : `último backup há ${ha(l.dias)}`;
     default: return l.status === 'sem-registro' ? 'sem registro · toque para anotar' : textoLembrete(l).replace(l.nome + ': ', '');
   }
 }
-const acaoAlerta = l => ({ doc: `data-doc="${l.doc}"`, km: 'data-acao="atualizar-km"', backup: 'data-acao="backup"' }[l.tipo] || `data-servico="${l.id}"`);
+const acaoAlerta = l => ({ doc: `data-doc="${l.doc}"`, km: 'data-acao="atualizar-km"', backup: 'data-acao="backup"', calib: 'data-acao="calibragem"' }[l.tipo] || `data-servico="${l.id}"`);
 const carimboAlerta = l => ({ km: '<span class="carimbo proximo"><b>Atualizar</b></span>', backup: '<span class="carimbo proximo"><b>Fazer</b></span>' }[l.tipo]
   || (l.tipo === 'doc' ? carimboDoc(l.status) : carimbo(l.status)));
 
@@ -479,12 +622,13 @@ function abrirAlertas() {
   const cartao = l => `<button class="pi-item" ${acaoAlerta(l)}>
       <span class="luz luz-${l.status}">${iconeAlerta(l)}</span>
       <span class="pi-txt"><b>${esc(l.nome)}</b><small>${esc(textoAlerta(l))}</small></span>${carimboAlerta(l)}</button>`;
-  const semDocs = statusDocumentos().filter(d => d.status === 'sem-data').length;
+  const semDocs = statusDocumentos().filter(d => d.status === 'sem-data').length, cal = statusCalibragem();
   abrirModal(`
     <div class="pi-cab"><div class="pi-tit"><small>Painel de alertas</small><b>${al.length ? `${al.length} aviso${al.length > 1 ? 's' : ''}` : 'Tudo em dia'}</b></div>
       ${htmlOdometro(est, v.km)}<button class="fechar" data-acao="fechar-modal" title="Fechar">${ICO.x}</button></div>
     <div class="cx-corpo pi-lista">${al.length ? al.map(cartao).join('') : `<div class="pi-ok"><span class="luz luz-ok">${ICO.ok}</span><p>Nenhuma manutenção ou documento vencido ou próximo.</p></div>`}
-      ${semDocs ? `<button class="pi-dica" data-livro="veiculo">${ICO.doc}<span>${semDocs} vencimento${semDocs > 1 ? 's' : ''} de documento sem data (IPVA, licenciamento, seguro, CNH) · toque para cadastrar</span></button>` : ''}</div>
+      ${semDocs ? `<button class="pi-dica" data-livro="veiculo">${ICO.doc}<span>${semDocs} vencimento${semDocs > 1 ? 's' : ''} de documento sem data (IPVA, licenciamento, seguro, CNH) · toque para cadastrar</span></button>` : ''}
+      ${cal.status === 'ok' ? `<button class="pi-dica" data-acao="calibragem">${ICO.calib}<span>Calibragem dos pneus: última há ${cal.dias} dia${cal.dias === 1 ? '' : 's'} · próximo aviso em ${cal.int - 2 - cal.dias} dia${cal.int - 2 - cal.dias === 1 ? '' : 's'}</span></button>` : ''}</div>
     <div class="cx-rodape"><button class="btn" data-acao="lembretes">Ajustar intervalos</button><button class="btn pri" data-livro="revisoes">Ver revisões</button></div>`,
   false, `painel-instr instr-${est}`);
 }
@@ -499,6 +643,8 @@ function alertas() {
   if (diasKm > 30) out.push({ id: 'km', tipo: 'km', status: 'proximo', nome: 'Atualizar a quilometragem', dias: diasKm });
   const temDados = e.registros.length + e.abastecimentos.length + e.ganhos.length > 0, diasBk = diasDesde(c.ultimoBackup);
   if (c.backupDias && temDados && (diasBk === null || diasBk >= c.backupDias)) out.push({ id: 'backup', tipo: 'backup', status: 'proximo', nome: 'Fazer backup', dias: diasBk });
+  const cal = statusCalibragem();
+  if (cal.status !== 'ok') out.push({ id: 'calib', tipo: 'calib', status: cal.status, nome: 'Calibragem dos pneus', dias: cal.dias });
   const peso = { vencido: 0, proximo: 1, 'sem-registro': 2 };
   return out.sort((a, b) => peso[a.status] - peso[b.status]);   // sort estável: mantém a ordem dentro de cada cor
 }
@@ -624,22 +770,47 @@ const celular = () => window.innerWidth <= 760;
 // (a mesma condição está no CSS, bloco v9.1). Tela em pé: barra de navegação embaixo.
 const LARGO = '(orientation: landscape) and (min-aspect-ratio: 4/3)';
 const telaLarga = () => matchMedia(LARGO).matches;
+// v10: as margens vêm das posições reais na tela: em pé, o topo vai até a fileira de subitens; deitado, a lista de
+// subitens à esquerda empurra o carro para a direita (o enquadramento das zonas usa essa área livre).
 function ajustarMargem() {
-  const p = $('#painel'), topo = (celular() ? 134 : 124) + (ajustarCluster.extra || 0);   // painel superior + menu de regiões
+  const p = $('#painel');
   document.body.classList.toggle('painel-cheio', !p.hidden && p.classList.contains('cheio'));
   const perso = !$('#perso-lista').hidden, largo = telaLarga();
-  const esq = largo && !perso ? $('#nav-inf').offsetWidth + 24 : 0;   // largura do menu vertical (o carro vai para a direita)
-  // personalizando: carro acima do carrossel; no celular em pé, acima da barra de navegação
-  if (p.hidden) return carro.setMargem(-esq, perso ? $('#perso-lista').offsetHeight + 20 : celular() && !largo ? $('#nav-inf').offsetHeight + 40 : 0, topo);
-  if (celular()) carro.setMargem(-esq, p.classList.contains('cheio') ? 0 : window.innerHeight * 0.58, topo);
-  else carro.setMargem(p.offsetWidth + 12 - esq, 0, topo);
+  posicionarChips();
+  const chips = $('#chips'), rc = $('#carrossel').getBoundingClientRect();
+  const rch = !perso && chips.childElementCount && getComputedStyle(chips).display !== 'none' ? chips.getBoundingClientRect() : null;
+  let topo = rc.bottom + 8, esq = 0;
+  if (largo && !perso) esq = Math.max($('#nav-inf').getBoundingClientRect().right + 12, rch ? rch.right + 10 : 0);
+  else if (rch) topo = Math.max(topo, rch.bottom + 8);
+  // personalizando (v10.1.1): o carro fica na área livre acima do painel e dos balões (menu do aerofólio, cor);
+  // deitado, o balão da cor fica à esquerda e empurra o carro para a direita
+  if (perso && p.hidden) {
+    const lista = $('#perso-lista').getBoundingClientRect();
+    document.documentElement.style.setProperty('--perso-topo', Math.round(window.innerHeight - lista.top) + 'px');
+    let limite = lista.top, esqP = 0;
+    const flut = $('#perso-lista [data-flut]'); if (flut) limite = Math.min(limite, flut.getBoundingClientRect().top);
+    const cp = $('#cor-pop');
+    if (!cp.hidden) { const r = cp.getBoundingClientRect(); if (largo) esqP = r.right + 10; else limite = Math.min(limite, r.top); }
+    return carro.setMargem(0, window.innerHeight - limite + 12, topo, esqP);
+  }
+  // no celular em pé, o carro fica acima da barra de navegação
+  if (p.hidden) return carro.setMargem(0, celular() && !largo ? $('#nav-inf').offsetHeight + 40 : 0, topo, esq);
+  if (celular()) carro.setMargem(0, p.classList.contains('cheio') ? 0 : window.innerHeight * 0.58, topo, esq);
+  else carro.setMargem(p.offsetWidth + 12, 0, topo, esq);
 }
-window.addEventListener('resize', () => carro && ajustarMargem());
+window.addEventListener('resize', () => {
+  if (!carro) return;
+  ajustarTitulo(); ajustarMargem(); posicionarCalib(); bordasChips();
+  if (ui.perso) { posicionarFlut(); desenharRoda(); }
+  // girou a tela (ou mudou o tamanho da janela): reenquadra a região para a nova área livre
+  clearTimeout(ajustarMargem.t);
+  ajustarMargem.t = setTimeout(() => { if (ui.montado && !ui.zona && !ui.perso) carro.setRegiao(zonasRegiao(), regiaoAtual()); }, 250);
+});
 
 function renderPainel() {
   const z = ZONA_POR_ID[ui.zona]; if (!z) return;
   const nPecas = z.grupos.reduce((s, g) => s + D.pecasDoGrupo(g).length, 0);
-  const nReg = D.registrosOrdenados(r => r.zona === z.id).length;
+  const nReg = D.registrosOrdenados(daZona(z.id)).length;
   const p = $('#painel');
   const rolagem = p.querySelector('.p-corpo')?.scrollTop || 0;
   p.innerHTML = `
@@ -776,7 +947,7 @@ function montarDiagrama() {
 }
 
 function abaHistorico(z) {
-  const regs = D.registrosOrdenados(r => r.zona === z.id);
+  const regs = D.registrosOrdenados(daZona(z.id));
   const total = regs.reduce((s, r) => s + D.totalRegistro(r), 0);
   return `
     <div class="resumo">
@@ -785,10 +956,13 @@ function abaHistorico(z) {
       <div><b>${regs[0] ? D.dataBR(regs[0].data) : '—'}</b><small>último serviço</small></div>
     </div>
     <button class="btn pri bloco" data-acao="novo-registro">${ICO.mais} Registrar serviço ou troca</button>
-    ${regs.length ? regs.map(cartaoRegistro).join('') : `<div class="vazio">${ICO.chave}<div>Nenhum serviço registrado em ${esc(z.nome.toLowerCase())}.</div><div class="p-sub">Registre trocas com data, km, peças e valores.</div></div>`}`;
+    ${regs.length ? regs.map(r => cartaoRegistro(r, z.id)).join('') : `<div class="vazio">${ICO.chave}<div>Nenhum serviço registrado em ${esc(z.nome.toLowerCase())}.</div><div class="p-sub">Registre trocas com data, km, peças e valores.</div></div>`}`;
 }
-function cartaoRegistro(r) {
+function cartaoRegistro(r, zona) {
+  // registro de outra zona que aparece aqui por um serviço programado desta zona (ex.: óleo + rodízio → Motor e Rodas)
+  const via = zona && r.zona !== zona ? (r.servicos || []).map(s => LEMBRETES_PADRAO.find(l => l.id === s)).filter(l => l?.zona === zona).map(l => l.nome) : [];
   return `<div class="reg">
+    ${via.length ? `<div class="reg-via">${ICO.chave}<span>Anotado em <b>${esc(ZONA_POR_ID[r.zona]?.nome || r.zona)}</b> · aparece aqui pelo serviço ${esc(via.join(', '))}</span></div>` : ''}
     <div class="reg-top"><div><b>${esc(r.titulo || TIPOS[r.tipo])}</b>
       <div class="reg-meta">${D.dataBR(r.data)} · ${D.km(r.km)} · ${esc(TIPOS[r.tipo] || '')}${r.oficina ? ' · ' + esc(r.oficina) : ''}</div></div>
       <b>${D.brl(D.totalRegistro(r))}</b></div>
@@ -809,7 +983,7 @@ function abaReparos(z) {
         <small>${esc(textoLembrete(l).replace(l.nome + ': ', ''))}</small>
         <small>${l.km ? 'a cada ' + D.km(l.km) : ''}${l.km && l.meses ? ' ou ' : ''}${l.meses ? l.meses + ' meses' : ''}${!l.km && !l.meses ? 'sem intervalo definido' : ''} · ${esc(l.detalhe)}</small></div>
         <button class="btn" data-servico="${l.id}" style="padding:6px 10px;font-size:12.5px">Registrar</button></div>`).join('')}` : ''}
-    ${z.specs?.length ? `<div class="secao">Especificações</div><dl class="spec">${z.specs.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>` : ''}
+    ${z.specs?.length ? `<div class="secao">Especificações</div><dl class="spec">${z.specs.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(k === 'Pneu' ? textoPneuSpec(v) : v)}</dd>`).join('')}</dl>` : ''}
     ${z.problemas?.length ? `<div class="secao">Problemas conhecidos</div>
       <p class="aviso-fonte">Relatos frequentes de proprietários e oficinas — confirme sempre com diagnóstico.</p>
       ${z.problemas.map(p => `<div class="prob"><b>${esc(p.t)}</b> <span class="tag ${p.g}">${{ alta: 'atenção alta', media: 'atenção média', baixa: 'atenção baixa' }[p.g]}</span>
@@ -880,8 +1054,21 @@ let rascunho = null;
 function modalRegistro(reg) {
   const v = D.getEstado().veiculo;
   rascunho = reg ? JSON.parse(JSON.stringify(reg)) : { tipo: 'troca', data: D.hoje(), km: v.km || '', zona: ui.zona || 'motor', pecas: [], servicos: [], maoDeObra: '', oficina: '', obs: '', titulo: '', tituloAuto: true };
+  // v10: a zona acompanha os serviços programados marcados, até o usuário escolher outra à mão.
+  // Registro salvo cuja zona não bate com os serviços = zona escolhida à mão (não é trocada).
+  rascunho._zonaManual = !!reg && !(reg.servicos?.length && zonaDosServicos(reg.servicos) === reg.zona);
   renderRegistro();
 }
+// Zona dos serviços programados marcados: a mais frequente entre eles (empate = a do primeiro marcado)
+function zonaDosServicos(servs) {
+  const zs = (servs || []).map(s => LEMBRETES_PADRAO.find(l => l.id === s)?.zona).filter(Boolean);
+  if (!zs.length) return null;
+  const n = {}; zs.forEach(z => { n[z] = (n[z] || 0) + 1; });
+  return zs.reduce((a, b) => (n[b] > n[a] ? b : a));
+}
+// Registros que aparecem no histórico de uma zona: os da zona e os que têm serviço programado dela
+// (ex.: óleo + rodízio aparece em Motor e também em Rodas)
+const daZona = id => r => r.zona === id || (r.servicos || []).some(s => LEMBRETES_PADRAO.find(l => l.id === s)?.zona === id);
 // Título gerado a partir dos serviços programados, das peças ou do tipo + zona (opção "gerar com base nas demais informações")
 function gerarTitulo(r) {
   const ls = D.lembretes(), nomes = (r.servicoFixo ? [r.servicoFixo] : r.servicos || []).map(s => ls.find(l => l.id === s)?.nome).filter(Boolean);
@@ -900,7 +1087,8 @@ function renderRegistro() {
     <div class="cx-corpo"><div class="form" data-form>
       <label><span class="rot-info">Tipo <button type="button" class="info-btn" data-acao="info-tipo" aria-label="O que é cada tipo" title="O que é cada tipo">${ICO.info}</button></span>
         <select name="tipo">${Object.entries(TIPOS).map(([k, t]) => `<option value="${k}" ${r.tipo === k ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
-      <label>Zona do carro<select name="zona">${ZONAS.map(z => `<option value="${z.id}" ${r.zona === z.id ? 'selected' : ''}>${esc(z.nome)}</option>`).join('')}</select></label>
+      <label>Zona do carro<select name="zona">${ZONAS.map(z => `<option value="${z.id}" ${r.zona === z.id ? 'selected' : ''}>${esc(z.nome)}</option>`).join('')}</select>
+        <small class="zona-nota" data-zona-nota ${!r._zonaManual && r.servicos?.length && !r.servicoFixo ? '' : 'hidden'}>Definida pelos serviços marcados</small></label>
       <div class="info-tipos cheio" data-info-tipo hidden><b>Qual tipo escolher?</b>
         <dl>${Object.entries(TIPOS).map(([k, t]) => `<dt>${t}</dt><dd>${TIPOS_INFO[k]}</dd>`).join('')}</dl></div>
       <label>Data<input type="date" name="data" value="${esc(r.data)}" required></label>
@@ -927,11 +1115,15 @@ function renderRegistro() {
           ? `<label class="serv-fixo"><input type="checkbox" checked disabled><span class="serv-ico">${SICO[r.servicoFixo] || ICO.chave}</span>${esc(servNome(r.servicoFixo))}</label>
              <small class="serv-nota">Registro individual deste serviço. Para anotar vários serviços juntos, use “Anotar serviço”.</small>`
           // mesmos ícones das revisões e do painel de alertas
-          : D.lembretes().map(l => `<label class="${r.servicos.includes(l.id) ? 'marcado' : ''}"><input type="checkbox" data-serv="${l.id}" ${r.servicos.includes(l.id) ? 'checked' : ''}><span class="serv-ico">${SICO[l.id] || ICO.chave}</span>${esc(l.nome)}</label>`).join('')}</div>
+          : D.lembretes().map(l => `<label class="${r.servicos.includes(l.id) ? 'marcado' : ''}"><input type="checkbox" data-serv="${l.id}" ${r.servicos.includes(l.id) ? 'checked' : ''}><span class="serv-ico">${SICO[l.id] || ICO.chave}</span>${esc(l.nome)}</label>`).join('')
+            + '<small class="serv-nota">O registro também aparece no histórico da zona de cada serviço marcado (ex.: óleo + rodízio aparece em Motor e em Rodas).</small>'}</div>
       <label class="cheio">Observações<textarea name="obs" placeholder="Marca usada, garantia, sintomas…">${esc(r.obs)}</textarea></label>
       <div class="fotos-form"><label>Fotos e notas fiscais</label>
         <div class="anexos" data-fotos></div>
-        <label class="btn foto-add">${ICO.camera} Adicionar foto<input type="file" accept="image/*" multiple data-addfoto hidden></label>
+        <div class="foto-botoes">
+          <label class="btn foto-add">${ICO.camera} Tirar foto<input type="file" accept="image/*" capture="environment" data-addfoto hidden></label>
+          <label class="btn foto-add">${ICO.galeria} Galeria<input type="file" accept="image/*" multiple data-addfoto hidden></label>
+        </div>
         <small class="serv-nota">Tire uma foto da nota, da peça ou do serviço. As fotos ficam guardadas neste aparelho e entram no backup.</small>
       </div>
     </div></div>
@@ -952,9 +1144,15 @@ function renderRegistro() {
       else p[t.dataset.c] = val;
     }
     $('.cx-rodape b').textContent = D.brl(D.totalRegistro(rascunho));
+    if (t.name === 'zona') { rascunho._zonaManual = true; f.querySelector('[data-zona-nota]').hidden = true; }   // escolhida à mão: fica
     if (t.dataset.serv !== undefined) {
-      rascunho.servicos = [...f.querySelectorAll('[data-serv]:checked')].map(x => x.dataset.serv);
+      // na ordem em que foram marcados (o empate de zonas fica com o primeiro marcado)
+      const id = t.dataset.serv, outros = (rascunho.servicos || []).filter(x => x !== id);
+      rascunho.servicos = t.checked ? [...outros, id] : outros;
       t.closest('label').classList.toggle('marcado', t.checked);
+      const z = !rascunho._zonaManual && zonaDosServicos(rascunho.servicos);
+      if (z) { rascunho.zona = z; f.querySelector('[name=zona]').value = z; }
+      f.querySelector('[data-zona-nota]').hidden = !z;
     }
     if (t.matches('[data-titulo-auto]')) {
       rascunho.tituloAuto = t.checked; campoTitulo.disabled = t.checked;
@@ -965,7 +1163,7 @@ function renderRegistro() {
   });
   f.querySelectorAll('[data-moeda]').forEach(i => mascaraMoeda(i, 2));   // 5-0-0-0 → 50,00 (como na bomba)
   renderFotosForm();
-  f.querySelector('[data-addfoto]').addEventListener('change', async e => {
+  f.querySelectorAll('[data-addfoto]').forEach(inp => inp.addEventListener('change', async e => {
     const arqs = [...e.target.files]; e.target.value = '';
     if (!arqs.length) return;
     toast(arqs.length > 1 ? `Guardando ${arqs.length} fotos…` : 'Guardando foto…');
@@ -973,8 +1171,8 @@ function renderRegistro() {
       try { const id = await Anexos.adicionarFoto(a); (rascunho.anexos ||= []).push(id); (rascunho._novos ||= []).push(id); }
       catch { toast('Não foi possível guardar a foto'); }
     }
-    renderFotosForm(); toast('Foto adicionada');
-  });
+    renderFotosForm(); toast(arqs.length > 1 ? 'Fotos adicionadas' : 'Foto adicionada');
+  }));
 }
 // miniaturas do formulário (toque = ampliar; × = remover)
 function renderFotosForm() {
@@ -1122,7 +1320,7 @@ function modalConfig() {
         ${trocaDoc(c.documento)}</div>
       <div class="cfg-linha"><div><b>Pontos sobre o carro</b><small>Marcadores clicáveis de cada zona</small></div>
         ${seg('pinos', [[true, 'Mostrar'], [false, 'Ocultar']])}</div>
-      <div class="cfg-linha"><div><b>Personalizar o carro</b><small>Aerofólio, placa dianteira e cor das rodas · atalho: toque e segure o carro</small></div>
+      <div class="cfg-linha"><div><b>Personalizar o carro</b><small>Aerofólio, placa dianteira, cor das rodas e pneus · atalho: toque e segure o carro</small></div>
         <button class="btn" data-acao="personalizar">${ICO.pincel} Personalizar</button></div>
       <div class="secao">Backup e dados</div>
       <div class="menu-lista">
@@ -1292,7 +1490,7 @@ function buscaCatalogo(q) {
 }
 
 // ── Menus suspensos: hodômetro (para baixo), filtro e manual (para cima) e o botão + (lançamentos rápidos) ──
-const MENUS = { filtro: ['#filtro-lista', '.filtro-btn'], odo: ['#odo-pop', null], manual: ['#manual-conf', '[data-acao="manual"]'], fab: ['#fab-menu', '.fab'] };
+const MENUS = { filtro: ['#filtro-lista', '.filtro-btn'], odo: ['#odo-pop', null], manual: ['#manual-conf', '[data-acao="manual"]'], fab: ['#fab-menu', '.fab'], calib: ['#calib-pop', null] };
 const menuAberto = () => Object.values(MENUS).some(([l]) => !$(l).hidden);
 function alternarMenu(qual) {
   const [lista, botao] = MENUS[qual], abrir = $(lista).hidden;
@@ -1360,32 +1558,53 @@ function iniciarPerso() {
   fecharMenus(); fecharModal();
   $('#perso-sugestao').hidden = true;
   if (ui.zona) carro.selecionar(null, true);
+  // v10.1.1: personalizar começa sem filtro e na visão geral (carro inteiro)
+  if (ui.filtro !== 'geral') setFiltro('geral', false);
+  ui.reg[ui.filtro] = 0; aplicarRegiao(false, 0);
   const c = cfg();
-  ui.perso = { aerofolio: c.aerofolio, corRodas: c.corRodas ?? null, placaDianteira: c.placaDianteira };
-  ui.persoSub = null;
+  ui.perso = { aerofolio: c.aerofolio, corRodas: c.corRodas ?? null, placaDianteira: c.placaDianteira, corPerso: c.corPerso ?? null, ...pneusCfg(c) };
+  ui.persoSub = null; ui.persoAviso = null; ui.persoEixo ||= 'ambos';
+  const pn = medidasPneu(c);
+  ui.pneusAceitos = new Set([pn.diant, pn.tras]);   // medidas já salvas não pedem confirmação de novo
   carro.semSelecao = true;   // toques no carro não abrem peças enquanto personaliza
   document.body.classList.add('personalizando');
   renderPerso();
   $('#perso-lista').hidden = false;
-  ajustarMargem();   // o carro sobe um pouco para o carrossel não cobri-lo
+  ajustarMargem();   // o carro sobe para o painel não cobri-lo
+  carro.focarPerso(null);
 }
 function fecharPerso(salvar) {
   if (!ui.perso) return;
-  const c = cfg(), mudou = Object.keys(ui.perso).some(k => (ui.perso[k] ?? null) !== (c[k] ?? null));
+  const c = { ...cfg(), ...pneusCfg() }, mudou = Object.keys(ui.perso).some(k => (ui.perso[k] ?? null) !== (c[k] ?? null));
   if (salvar && mudou) D.atualizarConfig({ ...ui.perso });
   carro.setPersonalizacao(cfg());   // cancelar: volta ao que estava salvo
-  ui.perso = null; ui.persoSub = null; carro.semSelecao = false;
+  carro.setCor(corCarro());
+  ui.perso = null; ui.persoSub = null; ui.persoAviso = null; carro.semSelecao = false;
   document.body.classList.remove('personalizando');
   $('#perso-lista').hidden = true;
+  $('#cor-pop').hidden = true; $('#cor-pop').innerHTML = ''; document.body.classList.remove('cor-aberta');
   ajustarMargem();
+  aplicarRegiao(true, 0);   // sem o painel de baixo: reenquadra a região
   if (mudou) toast(salvar ? 'Personalização salva' : 'Alterações descartadas');
 }
-// Carrossel horizontal de ícones com ✕ (cancelar) e ✓ (confirmar). Liga/desliga troca com um toque;
-// opções com várias escolhas (cores das rodas) abrem uma fileira logo acima.
+// Abre/fecha uma opção (cor, aerofólio, placa, rodas, pneus). A câmera vai para o que está sendo personalizado;
+// fechou a opção, volta ao carro inteiro.
+function abrirSubPerso(qual) {
+  ui.persoSub = ui.persoSub === qual ? null : qual;
+  renderPerso(); ajustarMargem();
+  carro.focarPerso(ui.persoSub);
+}
+// Cor que aparece no 3D: a personalizada (Personalizar → Cor) ou a de fábrica (Veículo)
+const corCarro = () => cfg().corPerso || D.getEstado().veiculo.cor;
+const AEROFOLIOS = [['sem', 'Sem aerofólio', false], ['gt', 'GT (original)', true], ['duckbill', 'Duckbill', null], ['evo', 'Evolution', null]];
+const PLACAS = [['original', 'Centro', 'placaCentro'], ['lado', 'Lado', 'placaLado'], [null, 'Fundo', 'placaFundo'], ['sem', 'Sem placa', 'placaSem']];
+// Carrossel horizontal de ícones com ✕ (cancelar) e ✓ (confirmar). Cada opção abre a sua escolha:
+// cor = balão com a roda de cores; aerofólio = menu vertical logo acima; placa, rodas e pneus = fileira acima do carrossel.
 function renderPerso() {
   const c = ui.perso, sub = ui.persoSub, cor = CORES_RODAS.find(([v]) => (c.corRodas ?? null) === v) || CORES_RODAS[0];
-  const item = ({ perso, acao, ico, nome, estado, ativo, extra = '' }) =>
-    `<button class="perso-item ${ativo ? 'ativo' : ''}" ${perso ? `data-perso="${perso}"` : `data-acao="${acao}"`} ${extra} title="${esc(nome)}: ${esc(estado)}">
+  const corAtual = c.corPerso || D.getEstado().veiculo.cor;
+  const item = ({ s, ico, nome, estado }) =>
+    `<button class="perso-item ${sub === s ? 'ativo' : ''}" data-acao="perso-sub" data-sub="${s}" aria-expanded="${sub === s}" title="${esc(nome)}: ${esc(estado)}">
       <span class="pi-ico">${ico}</span><b>${nome}</b><small>${estado}</small></button>`;
   $('#perso-lista').innerHTML = `
     <div class="perso-topo">
@@ -1396,12 +1615,176 @@ function renderPerso() {
     ${sub === 'rodas' ? `<div class="perso-sub" role="radiogroup" aria-label="Cor das rodas">${CORES_RODAS.map(([v, n, amostra]) => {
       const sel = (c.corRodas ?? null) === v;
       return `<button type="button" role="radio" aria-checked="${sel}" title="${n}" data-perso="corRodas:${v ?? 'null'}" class="${sel ? 'ativo' : ''}"><i style="background:${amostra || v}"></i><small>${n.replace(' (prata)', '')}</small></button>`; }).join('')}</div>` : ''}
+    ${sub === 'placa' ? `<div class="perso-sub perso-placa" role="radiogroup" aria-label="Placa">${PLACAS.map(([v, n, ico]) => {
+      const sel = (c.placaDianteira || 'original') === v;
+      return v === null
+        ? `<button type="button" class="bloqueado" data-acao="perso-embreve" aria-disabled="true" title="Fundo da placa personalizado: em breve"><i class="pl-ico">${ICO[ico]}</i><small>${n}</small><em>em breve</em></button>`
+        : `<button type="button" role="radio" aria-checked="${sel}" class="${sel ? 'ativo' : ''}" data-perso="placaDianteira:${v}" title="${n}"><i class="pl-ico">${ICO[ico]}</i><small>${n}</small></button>`; }).join('')}</div>` : ''}
+    ${sub === 'pneus' ? subPneus() : ''}
+    ${sub === 'aerofolio' ? `<div class="perso-flut" data-flut role="radiogroup" aria-label="Aerofólio">${AEROFOLIOS.map(([k, n, v]) => v === null
+      ? `<button type="button" class="bloqueado" data-acao="perso-embreve" aria-disabled="true">${ICO.aerofolio}<span>${n}</span><small>em breve</small></button>`
+      : `<button type="button" role="radio" aria-checked="${c.aerofolio === v}" class="${c.aerofolio === v ? 'ativo' : ''}" data-perso="aerofolio:${v}">${ICO.aerofolio}<span>${n}</span>${c.aerofolio === v ? ICO.check : ''}</button>`).join('')}</div>` : ''}
     <div class="perso-carrossel">
-      ${item({ perso: `aerofolio:${!c.aerofolio}`, ico: ICO.aerofolio, nome: 'Aerofólio', estado: c.aerofolio ? 'Com' : 'Sem', ativo: c.aerofolio })}
-      ${item({ perso: `placaDianteira:${c.placaDianteira === 'lado' ? 'original' : 'lado'}`, ico: ICO.placa, nome: 'Placa diant.', estado: c.placaDianteira === 'lado' ? 'Lado' : 'Centro', ativo: c.placaDianteira === 'lado' })}
-      ${item({ acao: 'perso-rodas', ico: `${ICO.roda}<i class="pi-cor" style="background:${cor[2] || cor[0]}"></i>`, nome: 'Rodas', estado: cor[1].replace(' (prata)', ''), ativo: sub === 'rodas', extra: `aria-expanded="${sub === 'rodas'}"` })}
+      ${item({ s: 'cor', ico: `${ICO.paleta}<i class="pi-cor" style="background:${corAtual}"></i>`, nome: 'Cor', estado: c.corPerso ? c.corPerso.toUpperCase() : 'Fábrica' })}
+      ${item({ s: 'aerofolio', ico: ICO.aerofolio, nome: 'Aerofólio', estado: c.aerofolio ? 'GT' : 'Sem' })}
+      ${item({ s: 'placa', ico: ICO.placa, nome: 'Placa', estado: { lado: 'Lado', sem: 'Sem' }[c.placaDianteira] || 'Centro' })}
+      ${item({ s: 'rodas', ico: `${ICO.roda}<i class="pi-cor" style="background:${cor[2] || cor[0]}"></i>`, nome: 'Rodas', estado: cor[1].replace(' (prata)', '') })}
+      ${item({ s: 'pneus', ico: ICO.pneu, nome: 'Pneus', estado: (c.pneu || null) === (c.pneuTras || null) ? fmtMedida(c.pneu || PNEU_ORIGINAL) : 'Frente ≠ trás' })}
       <button class="perso-item bloqueado" data-acao="perso-mais" aria-disabled="true" title="Personalizar mais peças: em breve"><span class="pi-ico">${ICO.cadeado}</span><b>Mais peças</b><small>em breve</small></button>
     </div>`;
+  posicionarFlut();
+  // balão da cor: montado ao abrir a opção e desmontado ao fechar (enquanto aberto, a roda de cores não é redesenhada)
+  const pop = $('#cor-pop');
+  document.body.classList.toggle('cor-aberta', sub === 'cor');   // deitado: o painel de baixo vai para a direita do balão
+  if (sub === 'cor') { if (!pop.childElementCount) montarCorPop(); pop.hidden = false; posicionarFlut(); posicionarCorPop(); }
+  else if (!pop.hidden) { pop.hidden = true; pop.innerHTML = ''; }
+}
+// menu vertical do aerofólio: logo acima do item, com a setinha apontando para ele
+function posicionarFlut() {
+  const f = $('#perso-lista [data-flut]'), it = $('#perso-lista [data-sub="aerofolio"]'); if (!f || !it) return;
+  const li = $('#perso-lista').getBoundingClientRect(), ir = it.getBoundingClientRect(), w = f.offsetWidth;
+  const x = Math.max(6, Math.min(ir.left + ir.width / 2 - li.left - w / 2, li.width - w - 6));
+  f.style.left = x + 'px'; f.style.bottom = (li.bottom - ir.top + 6) + 'px';
+  f.style.setProperty('--seta', (ir.left + ir.width / 2 - li.left - x) + 'px');
+}
+
+// ── Cor personalizada (v10.1.1): roda de cores (matiz × saturação), brilho, RGB e código html ──
+// Só muda o 3D (config.corPerso); a cor de fábrica continua em Veículo.
+const hex2rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const rgb2hex = (r, g, b) => '#' + [r, g, b].map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
+function rgb2hsv(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const mx = Math.max(r, g, b), d = mx - Math.min(r, g, b);
+  let h = 0; if (d) h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return { h: (h * 60 + 360) % 360, s: mx ? d / mx : 0, v: mx };
+}
+function hsv2rgb(h, s, v) {
+  const f = n => { const k = (n + h / 60) % 6; return (v - v * s * Math.max(0, Math.min(k, 4 - k, 1))) * 255; };
+  return [f(5), f(3), f(1)];
+}
+function montarCorPop() {
+  const pop = $('#cor-pop');
+  ui.corHsv = rgb2hsv(...hex2rgb(ui.perso.corPerso || D.getEstado().veiculo.cor)); ui.corImg = null;
+  pop.innerHTML = `
+    <div class="cor-cab"><div><b>Cor personalizada</b><small>Só no 3D · a de fábrica fica em Veículo</small></div>
+      <button class="cp-x" data-acao="perso-sub" data-sub="cor" title="Fechar" aria-label="Fechar">${ICO.x}</button></div>
+    <div class="cor-corpo">
+      <canvas class="cor-roda" role="img" aria-label="Roda de cores: toque ou arraste para escolher"></canvas>
+      <div class="cor-lado">
+        <label class="cor-brilho"><small>Brilho</small><input type="range" min="0" max="100" data-cor-v aria-label="Brilho"></label>
+        <div class="cor-rgb">${['R', 'G', 'B'].map((n, i) => `<label><small>${n}</small><input type="number" inputmode="numeric" min="0" max="255" data-cor-rgb="${i}" aria-label="${n}"></label>`).join('')}</div>
+        <label class="cor-hex"><small>Código html</small><input data-cor-hex maxlength="7" spellcheck="false" autocomplete="off" aria-label="Código html da cor"></label>
+        <button type="button" class="cor-fabrica" data-acao="perso-cor-fabrica">${ICO.reset}<span>Cor de fábrica</span></button>
+      </div>
+    </div>`;
+  const cv = pop.querySelector('canvas');
+  const escolher = e => {
+    const r = cv.getBoundingClientRect(), R = r.width / 2, dx = e.clientX - r.left - R, dy = e.clientY - r.top - R;
+    ui.corHsv.h = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360; ui.corHsv.s = Math.min(1, Math.hypot(dx, dy) / R);
+    if (ui.corHsv.v < 0.08) ui.corHsv.v = 1;   // com o brilho no zero a roda é toda preta: escolher uma cor acende
+    aplicarCorPerso('roda');
+  };
+  cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); escolher(e); });
+  cv.addEventListener('pointermove', e => { if (cv.hasPointerCapture(e.pointerId)) escolher(e); });
+  requestAnimationFrame(() => atualizarCorUI());
+}
+// deitado: à esquerda, abaixo do menu de regiões; em pé: acima do painel, com a setinha no item "Cor"
+function posicionarCorPop() {
+  const pop = $('#cor-pop'), it = $('#perso-lista [data-sub="cor"]'); if (pop.hidden || !it) return;
+  const r = pop.getBoundingClientRect(), ir = it.getBoundingClientRect();
+  pop.style.setProperty('--seta', Math.max(18, Math.min(r.width - 18, ir.left + ir.width / 2 - r.left)) + 'px');
+}
+function desenharRoda() {
+  const cv = $('#cor-pop canvas'); if (!cv || !ui.corHsv) return;
+  const dpr = Math.min(2, window.devicePixelRatio || 1), n = Math.round(cv.clientWidth * dpr); if (!n) return;
+  if (cv.width !== n) { cv.width = cv.height = n; ui.corImg = null; }
+  const ctx = cv.getContext('2d'), R = n / 2, { h, s, v } = ui.corHsv;
+  if (!ui.corImg || ui.corImgV !== v) {   // a roda só é recalculada quando o brilho muda
+    const img = ctx.createImageData(n, n), d = img.data;
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+      const dx = x + 0.5 - R, dy = y + 0.5 - R, r = Math.hypot(dx, dy); if (r > R) continue;
+      const [cr, cg, cb] = hsv2rgb((Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360, Math.min(1, r / (R - 1)), v), i = (y * n + x) * 4;
+      d[i] = cr; d[i + 1] = cg; d[i + 2] = cb; d[i + 3] = 255 * Math.min(1, R - r);   // borda suave
+    }
+    ui.corImg = img; ui.corImgV = v;
+  }
+  ctx.putImageData(ui.corImg, 0, 0);
+  const a = h * Math.PI / 180, mx = R + Math.cos(a) * s * (R - 2), my = R + Math.sin(a) * s * (R - 2);
+  ctx.lineWidth = 3 * dpr; ctx.strokeStyle = '#fff'; ctx.beginPath(); ctx.arc(mx, my, 7 * dpr, 0, 7); ctx.stroke();
+  ctx.lineWidth = 1.2 * dpr; ctx.strokeStyle = 'rgba(0,0,0,.55)'; ctx.beginPath(); ctx.arc(mx, my, 8.8 * dpr, 0, 7); ctx.stroke();
+}
+// origem = o campo que o usuário está mexendo (não é reescrito enquanto ele digita)
+function atualizarCorUI(origem) {
+  const pop = $('#cor-pop'); if (!pop.childElementCount || !ui.corHsv) return;
+  const { h, s, v } = ui.corHsv, rgb = hsv2rgb(h, s, v).map(Math.round), hex = rgb2hex(...rgb);
+  desenharRoda();
+  const sl = pop.querySelector('[data-cor-v]');
+  if (origem !== 'v') sl.value = Math.round(v * 100);
+  sl.style.setProperty('--cor-cheia', rgb2hex(...hsv2rgb(h, s, 1)));
+  if (origem !== 'rgb') pop.querySelectorAll('[data-cor-rgb]').forEach((el, i) => { el.value = rgb[i]; });
+  if (origem !== 'hex') pop.querySelector('[data-cor-hex]').value = hex.toUpperCase();
+  pop.style.setProperty('--cor-atual', hex);
+}
+function aplicarCorPerso(origem) {
+  const { h, s, v } = ui.corHsv, hex = rgb2hex(...hsv2rgb(h, s, v));
+  ui.perso.corPerso = hex; carro.setCor(hex);
+  atualizarCorUI(origem); atualizarItemCor();
+}
+function atualizarItemCor() {
+  const it = $('#perso-lista [data-sub="cor"]'); if (!it) return;
+  const c = ui.perso.corPerso;
+  it.querySelector('.pi-cor').style.background = c || D.getEstado().veiculo.cor;
+  it.querySelector('small').textContent = c ? c.toUpperCase() : 'Fábrica';
+}
+// campos do balão: brilho, R/G/B e código html (#RRGGBB ou #RGB)
+function onCorInput(e) {
+  const t = e.target, pop = $('#cor-pop');
+  if (t.matches('[data-cor-v]')) { ui.corHsv.v = +t.value / 100; return aplicarCorPerso('v'); }
+  if (t.matches('[data-cor-rgb]')) {
+    ui.corHsv = rgb2hsv(...[...pop.querySelectorAll('[data-cor-rgb]')].map(x => Math.max(0, Math.min(255, +x.value || 0))));
+    return aplicarCorPerso('rgb');
+  }
+  if (t.matches('[data-cor-hex]')) {
+    let v = t.value.trim().replace(/^#?/, '#');
+    if (/^#[0-9a-f]{3}$/i.test(v)) v = '#' + [...v.slice(1)].map(x => x + x).join('');
+    if (/^#[0-9a-f]{6}$/i.test(v)) { ui.corHsv = rgb2hsv(...hex2rgb(v)); aplicarCorPerso('hex'); }
+  }
+}
+// Pneus (v10.1): em quais rodas (frente e trás, só frente, só trás) + largura / perfil / aro livres nas listas.
+// Fora de ±3% do diâmetro original aparece um aviso: "Usar assim" confirma, "Voltar" desfaz.
+const pctTxt = d => `${d >= 0 ? '+' : '−'}${fmt(Math.abs(d * 100), 1)}%`;
+function subPneus() {
+  const p = ui.perso, d = p.pneu || PNEU_ORIGINAL, t = p.pneuTras || PNEU_ORIGINAL, eixo = ui.persoEixo || 'ambos';
+  const medida = eixo === 'tras' ? t : d, m = lerMedida(medida);
+  const orig = eixo === 'ambos' ? d === PNEU_ORIGINAL && t === PNEU_ORIGINAL : medida === PNEU_ORIGINAL;
+  const campo = (k, nome, pre = '') => `<label class="pp-campo"><small>${nome}</small><select data-pneu-campo="${k}" aria-label="${nome}">${
+    [...new Set([...OPCOES_PNEU[k], m[k]])].sort((a, b) => a - b).map(v => `<option value="${v}" ${m[k] === v ? 'selected' : ''}>${pre}${v}</option>`).join('')}</select></label>`;
+  const eixos = [['ambos', 'Frente e trás'], ['diant', 'Só frente'], ['tras', 'Só trás']];
+  const desc = s => `<b>${fmtMedida(s)}</b> (Ø ${fmt(diametroPneu(lerMedida(s)), 0)} mm${s === PNEU_ORIGINAL ? ', original' : `, ${pctTxt(difPneu(s))}`}${s === '205/60R16' ? ', de fábrica do HL' : ''})`;
+  const dd = difPneu(d);   // o velocímetro mede pelas rodas da frente (tração dianteira)
+  const av = ui.persoAviso;
+  return `<div class="perso-sub perso-pneu">
+    <div class="pp-eixo" role="radiogroup" aria-label="Em quais rodas">${eixos.map(([k, n]) =>
+      `<button type="button" role="radio" aria-checked="${eixo === k}" class="${eixo === k ? 'ativo' : ''}" data-pneu-eixo="${k}">${n}</button>`).join('')}</div>
+    <div class="pp-campos">${campo('largura', 'Largura')}<span class="pp-barra">/</span>${campo('perfil', 'Perfil')}${campo('aro', 'Aro', 'R')}
+      <button type="button" class="pp-orig" data-pneu-op="original" ${orig ? 'disabled' : ''} title="Voltar ao original (215/45 R18)">Original</button></div>
+    <p class="pp-info">${d === t ? `Nas quatro rodas: ${desc(d)}` : `Frente: ${desc(d)} · Trás: ${desc(t)}`}${
+      Math.abs(dd) > 0.0005 ? ` · velocímetro em 100 = ${fmt(100 * (1 + dd), 1)} km/h reais` : ''}</p>
+    ${av ? `<div class="pp-aviso" role="alertdialog" aria-label="Medida fora da equivalência">${ICO.info}
+      <div><b>${av.lista.map(fmtMedida).join(' e ')}: ${av.lista.map(s => pctTxt(difPneu(s))).join(' / ')} do diâmetro original</b>
+        <small>A equivalência é de até ±3%. ${av.lista.some(s => difPneu(s) > 0) ? 'Pneu maior pode raspar na caixa de roda e na suspensão (no 3D ele atravessa o para-lama).' : 'Pneu menor deixa o carro mais baixo e mais perto das lombadas.'} Velocímetro e ABS passam a medir diferente.</small>
+        <span><button type="button" class="btn" data-pneu-op="voltar">Voltar</button><button type="button" class="btn pri" data-pneu-op="usar">Usar assim</button></span></div></div>` : ''}
+  </div>`;
+}
+// Aplica a medida nas rodas escolhidas (eixo) e decide se precisa do aviso de ±3%
+function aplicarPneu(eixo, nova) {
+  const p = ui.perso, antes = { pneu: p.pneu, pneuTras: p.pneuTras }, v = nova === PNEU_ORIGINAL ? null : nova;
+  if (eixo !== 'tras') p.pneu = v;
+  if (eixo !== 'diant') p.pneuTras = v;
+  const lista = [...new Set([p.pneu, p.pneuTras].filter(s => s && Math.abs(difPneu(s)) > LIMITE_EQUIV && !ui.pneusAceitos.has(s)))];
+  ui.persoAviso = lista.length ? { lista, antes: ui.persoAviso?.antes || antes } : null;   // "Voltar" volta ao último estado aceito
+  carro.setPersonalizacao({ ...cfg(), ...p });
+  renderPerso(); ajustarMargem();
 }
 
 // ── Filtro de camadas (canto inferior esquerdo, abre para cima) ──
@@ -1461,7 +1844,32 @@ function montarCarrossel() {
     else if (Math.abs(dx) < 6) { if (ui.zona) carro.selecionar(null, true); aplicarRegiao(true, 0); }   // toque no título: reenquadra
   };
   pista.addEventListener('pointerup', fim); pista.addEventListener('pointercancel', fim);
-  aplicarRegiao(false, 0);
+  montarChips();
+  aplicarRegiao(true, 0);   // v10: já abre com o carro enquadrado na área livre
+}
+// v10.1.1: fileira de subitens (em pé) como carrossel: arrasta com o dedo ou com o mouse e rola com a roda do mouse;
+// o esmaecido aparece só do lado em que ainda há itens escondidos
+function montarChips() {
+  const el = $('#chips'); let x0 = null, s0 = 0, moveu = false;
+  el.addEventListener('pointerdown', e => { if (telaLarga() || e.pointerType !== 'mouse') return; x0 = e.clientX; s0 = el.scrollLeft; moveu = false; });
+  window.addEventListener('pointermove', e => {
+    if (x0 === null) return;
+    const dx = e.clientX - x0; if (Math.abs(dx) > 5) moveu = true;
+    if (moveu) { el.scrollLeft = s0 - dx; el.classList.add('arrastando'); }
+  });
+  window.addEventListener('pointerup', () => { x0 = null; el.classList.remove('arrastando'); });
+  // arrastou: o clique que vem no fim do arrasto não abre o subitem
+  el.addEventListener('click', e => { if (moveu) { moveu = false; e.stopPropagation(); e.preventDefault(); } }, true);
+  el.addEventListener('wheel', e => {
+    if (telaLarga() || el.scrollWidth <= el.clientWidth) return;
+    el.scrollLeft += Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX; e.preventDefault();
+  }, { passive: false });
+  el.addEventListener('scroll', bordasChips, { passive: true });
+}
+function bordasChips() {
+  const el = $('#chips'), larga = telaLarga();
+  el.classList.toggle('mais-esq', !larga && el.scrollLeft > 4);
+  el.classList.toggle('mais-dir', !larga && el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
 }
 function passoRegiao(d) {
   const n = regioes().length;
@@ -1478,11 +1886,34 @@ function aplicarRegiao(moverCamera, dir) {
   $('[data-viz="1"]').textContent = n > 1 ? lista[(i + 1) % n].nome : '';
   $('[data-pontos]').innerHTML = lista.map((_, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('');
   if (dir) { t.classList.remove('de-dir', 'de-esq'); void t.offsetWidth; t.classList.add(dir > 0 ? 'de-dir' : 'de-esq'); }
-  carro.setRegiao(zonasRegiao(), moverCamera && !ui.zona ? r : null);
+  ajustarTitulo();
   renderChips();
+  ajustarMargem();   // os subitens mudam a área livre antes do enquadramento
+  carro.setRegiao(zonasRegiao(), moverCamera && !ui.zona ? r : null);
 }
+// Subitens da região: em pé, uma fileira com rolagem lateral; deitado, uma lista vertical à esquerda (só CSS)
 function renderChips() {
-  $('#chips').innerHTML = zonasRegiao().map(id => `<button data-pino="${id}" class="${ui.zona === id ? 'on' : ''}">${esc(ZONA_POR_ID[id].nome)}</button>`).join('');
+  const el = $('#chips');
+  el.innerHTML = zonasRegiao().map(id => `<button data-pino="${id}" class="${ui.zona === id ? 'on' : ''}">${esc(ZONA_POR_ID[id].nome)}</button>`).join('');
+  el.classList.toggle('vazio', !el.childElementCount);
+  const on = el.querySelector('.on');   // subitem escolhido fica à vista na fileira
+  el.scrollLeft = on ? on.offsetLeft - el.clientWidth / 2 + on.offsetWidth / 2 : 0;
+  requestAnimationFrame(bordasChips);
+  // botão "voltar à vista da zona": só quando há uma zona/região enquadrada (na visão geral o "carro inteiro" já faz isso)
+  $('.cam-zona').hidden = !ui.zona && !(ui.reg[ui.filtro] > 0);
+}
+// Os subitens ficam logo abaixo do menu de regiões (a altura do menu muda com o título em duas linhas e com o painel de alertas)
+function posicionarChips() {
+  document.documentElement.style.setProperty('--chips-top', Math.round($('#carrossel').getBoundingClientRect().bottom + 8) + 'px');
+}
+// Título da região sem reticências: a fonte diminui até caber; se nem assim couber, quebra em duas linhas
+function ajustarTitulo() {
+  const b = $('.car-titulo b'); if (!b) return;
+  b.classList.remove('duas'); b.style.fontSize = '';
+  let fs = parseFloat(getComputedStyle(b).fontSize);
+  const min = Math.max(15, fs * 0.72);
+  while (b.scrollWidth > b.clientWidth + 1 && fs > min) { fs -= 1; b.style.fontSize = fs + 'px'; }
+  if (b.scrollWidth > b.clientWidth + 1) { b.style.fontSize = ''; b.classList.add('duas'); }
 }
 
 // Rótulo que segue o mouse: o que o clique vai selecionar e se dá para atravessar
@@ -1859,7 +2290,7 @@ const conteudoLivro = {
 };
 function cancelarEdicaoVeiculo() {
   ui.livro.editando = false;
-  if (ui.livro.cor) { carro.setCor(D.getEstado().veiculo.cor); ui.livro.cor = null; }
+  if (ui.livro.cor) { carro.setCor(corCarro()); ui.livro.cor = null; }
 }
 
 function baixar(blob, nome) {
@@ -1882,11 +2313,12 @@ function irParaGrupo(gid) {
 const rolarPainel = y => { const c = $('#painel .p-corpo'); if (c) c.scrollTop = y; };
 
 function onClique(e) {
+  const calibAberto = !$('#calib-pop').hidden;   // tocar de novo na luz fecha o cartão
   // clique fora dos menus suspensos fecha-os (uma opção do botão + também fecha, depois de escolhida)
-  if ((!e.target.closest('#filtro, #odo-caixa, #nav-inf') || e.target.closest('#fab-menu [data-acao]')) && menuAberto()) fecharMenus();
+  if ((!e.target.closest('#filtro, #odo-caixa, #nav-inf, #calib-pop') || e.target.closest('#fab-menu [data-acao]')) && menuAberto()) fecharMenus();
   if ($('#menu-reg') && !e.target.closest('#menu-reg') && !e.target.closest('[data-item]')) fecharMenuRegistro();
   if ($('#menu-desp') && !e.target.closest('#menu-desp, [data-acao="desp-menu"]')) fecharMenuRegistro();
-  const t = e.target.closest('[data-passo],[data-acao],[data-aba],[data-grupo],[data-esq],[data-peca],[data-filtro],[data-livro],[data-item],[data-ano],[data-balao],[data-cfg],[data-bico],[data-doc],[data-ver-foto],[data-rmfoto],[data-pino],[data-zona],[data-editar],[data-trocar],[data-servico],[data-copiar],[data-rmpeca],[data-sugpeca],[data-cor],[data-sec],[data-rev],[data-fatia],[data-desp-op],[data-perso],[data-pag]');
+  const t = e.target.closest('[data-passo],[data-acao],[data-aba],[data-grupo],[data-esq],[data-peca],[data-filtro],[data-livro],[data-item],[data-ano],[data-balao],[data-cfg],[data-bico],[data-doc],[data-ver-foto],[data-rmfoto],[data-pino],[data-zona],[data-editar],[data-trocar],[data-servico],[data-copiar],[data-rmpeca],[data-sugpeca],[data-cor],[data-sec],[data-rev],[data-fatia],[data-desp-op],[data-perso],[data-pag],[data-calib-dias],[data-pneu-op],[data-pneu-eixo]');
   if (!t) {
     if (e.target.id === 'modal') fecharModal();
     else if (e.target.id === 'livrete') fecharLivrete();   // toque fora do caderno
@@ -1912,6 +2344,17 @@ function onClique(e) {
     return;
   }
   if (ds.balao) return mostrarBalao(t, ds.balao);
+  if (ds.pneuEixo && ui.perso) { ui.persoEixo = ds.pneuEixo; return renderPerso(); }
+  if (ds.pneuOp && ui.perso) {
+    if (ds.pneuOp === 'original') return aplicarPneu(ui.persoEixo || 'ambos', PNEU_ORIGINAL);
+    const av = ui.persoAviso; if (!av) return;
+    if (ds.pneuOp === 'usar') av.lista.forEach(s => ui.pneusAceitos.add(s));
+    else Object.assign(ui.perso, av.antes);   // voltar: desfaz até a última medida aceita
+    ui.persoAviso = null;
+    carro.setPersonalizacao({ ...cfg(), ...ui.perso });
+    renderPerso(); return ajustarMargem();
+  }
+  if (ds.calibDias) { D.atualizarConfig({ calibragemDias: +ds.calibDias }); renderCalib(); return posicionarCalib(); }
   if (ds.cfg) {
     const [k, v] = ds.cfg.split(':'), val = v === 'true' ? true : v === 'false' ? false : v === 'null' ? null : /^\d+$/.test(v) ? +v : v;
     D.atualizarConfig({ [k]: val });
@@ -1952,7 +2395,7 @@ function onClique(e) {
   if (ds.editar) { fecharMenuRegistro(); const r = D.getEstado().registros.find(x => x.id === ds.editar); return r && modalRegistro(r); }
   if (ds.trocar) {
     const p = JSON.parse(decodeURIComponent(ds.trocar));
-    modalRegistro(); rascunho.zona = zonaDoGrupo(p.grupo)?.id || ui.zona; rascunho.titulo = 'Troca: ' + p.desc;
+    modalRegistro(); rascunho.zona = zonaDoGrupo(p.grupo)?.id || ui.zona; rascunho._zonaManual = true; rascunho.titulo = 'Troca: ' + p.desc;
     rascunho.pecas.push({ oem: p.oem, desc: p.desc, ref: p.ref, qtd: 1, preco: '' }); return renderRegistro();
   }
   if (ds.servico) {
@@ -1975,6 +2418,11 @@ function onClique(e) {
     case 'cancelar-veiculo': cancelarEdicaoVeiculo(); return renderLivrete();
     case 'atualizar-km': return modalKm();
     case 'alertas': return abrirAlertas();
+    // calibragem dos pneus: cartão flutuante embaixo da luz
+    case 'calibragem': return calibAberto && t.closest('#luzes') ? undefined : abrirCalibragem();
+    case 'calib-fechar': return fecharMenus();
+    case 'calib-int': ui.calib.editarInt = true; renderCalib(); return posicionarCalib();
+    case 'calib-feito': return salvarCalibragem();
     case 'consumo': {
       const c = D.consumo();
       return mostrarBalao($('#consumo-caixa'), c.media ? `Média ${fmt(c.media, 1)} km/L em ${D.km(c.kmRodados)}` : 'Complete o tanque 2× com o km', true);
@@ -2021,15 +2469,26 @@ function onClique(e) {
     }
     // personalizar (toque longo no carro): rascunho na tela, salvo só no ✓
     case 'personalizar': case 'perso-iniciar': return iniciarPerso();
-    case 'perso-confirmar': return fecharPerso(true);
+    case 'perso-confirmar':   // medida fora de ±3% ainda sem resposta: pede para confirmar antes de salvar
+      if (ui.persoAviso) { ui.persoSub = 'pneus'; renderPerso(); ajustarMargem(); return toast('Confirme a medida do pneu (“Usar assim”) ou volte'); }
+      return fecharPerso(true);
     case 'perso-cancelar': return fecharPerso(false);
     case 'perso-mais': return mostrarBalao($('#perso-lista'), 'Mais peças: disponível em breve');
-    case 'perso-rodas': ui.persoSub = ui.persoSub === 'rodas' ? null : 'rodas'; renderPerso(); return ajustarMargem();
+    case 'perso-sub': return abrirSubPerso(ds.sub);   // cor, aerofólio, placa, rodas, pneus (a câmera acompanha)
+    case 'perso-embreve': return mostrarBalao(t, 'Em breve');
+    case 'perso-cor-fabrica': {   // volta à cor do Veículo (a de fábrica)
+      const fab = D.getEstado().veiculo.cor;
+      ui.perso.corPerso = null; carro.setCor(fab); ui.corHsv = rgb2hsv(...hex2rgb(fab));
+      atualizarCorUI(); return atualizarItemCor();
+    }
     // barra inferior: livro (última aba vista), botão + e enquadrar o carro inteiro
     case 'livro': return abrirLivrete(ui.livro.aba);
     case 'fab': return alternarMenu('fab');
     case 'fab-fechar': return fecharMenus();
     case 'camera-reset': return enquadrarCarro();
+    case 'camera-zona':   // volta ao enquadramento da peça aberta ou da região do menu
+      fecharMenus();
+      return ui.zona ? carro.reenquadrarSelecao() : carro.setRegiao(zonasRegiao(), regiaoAtual());
     case 'manual': return alternarMenu('manual');
     case 'manual-abrir': return fecharMenus();   // o link abre o PDF em outra aba
     case 'fechar-menus': return fecharMenus();
@@ -2106,7 +2565,7 @@ function onClique(e) {
       rascunho.pecas = rascunho.pecas.filter(p => p.oem || p.desc);
       if (rascunho.servicoFixo) rascunho.servicos = [rascunho.servicoFixo];
       const removidas = rascunho._removidos || [];
-      delete rascunho.servicoFixo; delete rascunho._novos; delete rascunho._removidos;
+      delete rascunho.servicoFixo; delete rascunho._novos; delete rascunho._removidos; delete rascunho._zonaManual;
       if (!rascunho.anexos?.length) delete rascunho.anexos;
       D.salvarRegistro(rascunho); fecharModal(); toast('Registro salvo');
       if (removidas.length) Anexos.excluir(removidas).catch(() => {});
@@ -2123,7 +2582,10 @@ function onClique(e) {
       for (const k of ['placa', 'chassi', 'combustivel', 'categoria', 'uf', 'motorNum']) if (dados[k]) dados[k] = dados[k].toUpperCase();
       if (ui.livro.cor) dados.cor = ui.livro.cor;
       ui.livro.cor = null; ui.livro.editando = false;
-      D.atualizarVeiculo(dados); atualizarPlaca(); toast('Veículo atualizado'); return;
+      D.atualizarVeiculo(dados); atualizarPlaca();
+      // com cor personalizada, o 3D continua com ela (a de fábrica fica só na ficha)
+      if (cfg().corPerso) { carro.setCor(cfg().corPerso); return toast('Veículo atualizado · o 3D segue com a cor personalizada (Personalizar → Cor)'); }
+      toast('Veículo atualizado'); return;
     }
     case 'lembretes': return modalLembretes();
     case 'salvar-lembretes':
@@ -2134,7 +2596,7 @@ function onClique(e) {
     case 'importar': {
       const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json,.txt,application/json,text/plain';
       inp.onchange = async () => {
-        try { const txt = await inp.files[0].text(); if (!confirm('Substituir os dados atuais pelos do backup?')) return; toast('Restaurando…'); await D.importarJSON(txt); carro.setCor(D.getEstado().veiculo.cor); atualizarPlaca(); carro.setPersonalizacao(cfg()); aplicarTema(); $('#pinos').hidden = !cfg().pinos; fecharModal(); toast('Backup restaurado'); }
+        try { const txt = await inp.files[0].text(); if (!confirm('Substituir os dados atuais pelos do backup?')) return; toast('Restaurando…'); await D.importarJSON(txt); carro.setCor(corCarro()); atualizarPlaca(); carro.setPersonalizacao(cfg()); aplicarTema(); $('#pinos').hidden = !cfg().pinos; fecharModal(); toast('Backup restaurado'); }
         catch (err) { toast(err.message); }
       };
       return inp.click();
@@ -2143,7 +2605,11 @@ function onClique(e) {
 }
 // filtros de despesas e de ganhos (selects do livro)
 function onTroca(e) {
-  const { desp, ganhos } = e.target.dataset;
+  const { desp, ganhos, pneuCampo } = e.target.dataset;
+  if (pneuCampo && ui.perso) {   // personalizar → pneus: troca só a largura, o perfil ou o aro (os outros ficam)
+    const eixo = ui.persoEixo || 'ambos', atual = (eixo === 'tras' ? ui.perso.pneuTras : ui.perso.pneu) || PNEU_ORIGINAL;
+    return aplicarPneu(eixo, medidaTexto({ ...lerMedida(atual), [pneuCampo]: +e.target.value }));
+  }
   if (desp) ui.livro.desp[desp] = e.target.value;
   else if (ganhos) ui.livro.ganhosPeriodo = e.target.value;
   else return;

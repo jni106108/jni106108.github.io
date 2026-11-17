@@ -49,7 +49,12 @@ const padrao = () => ({
   // tema: sistema | claro | escuro · odometro: moderno | classico · corRodas: null = original
   // backupDias: lembrete de backup (0 = nunca) · ultimoBackup: data do último backup feito
   // placaDianteira: original (centro) | lado (lado do motorista)
-  config: { tema: 'sistema', documento: 'branco', pinos: true, odometro: 'moderno', aerofolio: true, corRodas: null, placaDianteira: 'original', backupDias: 15, ultimoBackup: '' },
+  // v10: calibragem = última calibragem { data, diant, tras, estepe } (só a última, sem histórico) · calibragemDias = intervalo do aviso
+  //      pneu = medida dos dianteiros em Personalizar ("205/60R16"); null = original (215/45 R18)
+  //      pneuTras (v10.1) = medida dos traseiros; sem o campo (salvo na v10) = a mesma dos dianteiros
+  // v10.1.1: corPerso = cor só do 3D (Personalizar → Cor; null = a de fábrica, do Veículo) · placaDianteira 'sem' = sem placas
+  config: { tema: 'sistema', documento: 'branco', pinos: true, odometro: 'moderno', aerofolio: true, corRodas: null, placaDianteira: 'original', backupDias: 15, ultimoBackup: '',
+    calibragem: null, calibragemDias: 15, pneu: null, corPerso: null },
 });
 
 let estado = padrao();

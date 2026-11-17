@@ -304,8 +304,10 @@ export class Carro3D {
   }
   // Área coberta pelo painel (px à direita / embaixo): o enquadramento desliza para a área livre
   // `topo` = altura ocupada pela barra e pelo menu de regiões (empurra o carro um pouco para baixo)
-  setMargem(direita = 0, baixo = 0, topo = 0) {
-    this._offAlvo = { x: direita / 2, y: (baixo - topo) / 2 };
+  // `esq` (v10) = largura ocupada à esquerda (menu vertical e lista de subitens nas telas largas)
+  setMargem(direita = 0, baixo = 0, topo = 0, esq = 0) {
+    this._margem = { direita, baixo, topo, esq };
+    this._offAlvo = { x: (direita - esq) / 2, y: (baixo - topo) / 2 };
     if (!this._off) { this._off = { ...this._offAlvo }; this._aplicarOffset(); }   // primeira vez: sem animação
   }
   _aplicarOffset() {
@@ -391,7 +393,7 @@ export class Carro3D {
       const geos = zona === 'porta_malas' && mat === 'carpaint' ? separarAerofolio(o.geometry) : [o.geometry];
       geos.forEach((geo, k) => {
         const m = this._m(geo, MAT[mat] || M.preto, zona, { corpo: CORPO.has(zona), sombra: mat !== 'windowglass' && mat !== 'clearglass' });
-        m.userData.inst = inst || null;
+        m.userData.inst = inst || null; m.userData.mat = mat;
         m.material.side = THREE.DoubleSide;   // painéis do modelo são cascas finas (capô aberto mostra o lado de baixo)
         if (k === 1) (this.aerofolios ||= []).push(m);
         (porChave[zona + '|' + inst] ||= []).push(m);
@@ -421,8 +423,14 @@ export class Carro3D {
         case 'direcao': this._volanteGLB = ms; break;
         case 'rodas': {
           // cada roda vira um grupo centrado no cubo; os freios e suspensões também a afastam
+          const pneus = ms.filter(m => m.userData.mat === 'tire'), bp = caixa(pneus.length ? pneus : ms);
           const g = this._pivo(ms, new V3(c.x, 0.345, c.z));
-          (this._rodasGLB ||= {})[inst] = { grupo: g, centro: new V3(c.x, 0.345, c.z) };
+          // v10: o aro (tudo menos o pneu) fica num subgrupo centrado no cubo, para acompanhar o aro escolhido;
+          // o pneu original pode ser trocado por um gerado pela medida (setPneu)
+          const aro = new THREE.Group(); g.add(aro);
+          for (const m of ms) if (!pneus.includes(m)) aro.add(m);
+          (this._rodasGLB ||= {})[inst] = { grupo: g, centro: new V3(c.x, 0.345, c.z), aro, pneusGLB: pneus, yBase: 0.345,
+            raio: (bp.max.y - bp.min.y) / 2, largura: bp.max.z - bp.min.z };
           this._mover('rodas', g, { pos: [0, 0, s * 0.5], inst });
           break;
         }
@@ -605,6 +613,7 @@ export class Carro3D {
   // centros das zonas (para pinos e foco)
   _calcularCentros() {
     this.raiz.updateMatrixWorld(true);
+    this.caixaCarro = new THREE.Box3().setFromObject(this.raiz);   // v10: enquadramento da visão geral
     for (const [id, z] of Object.entries(this.zonas)) {
       const box = new THREE.Box3(); z.meshes.forEach(m => box.expandByObject(m));
       z.centro = box.getCenter(new V3()); z.caixa = box;
@@ -897,7 +906,37 @@ export class Carro3D {
     if (Math.abs(c.z) > 0.25) dir.z = Math.sign(c.z) * Math.max(Math.abs(dir.z), 0.5);
     if (z.caixa.getSize(new V3()).x > 2 && Math.abs(c.x) > 0.6) dir.x = Math.sign(c.x) * Math.max(Math.abs(dir.x), 0.4);
     const alvo = c.clone(); alvo.y = Math.max(alvo.y, 0.35);
-    this.irPara(alvo, dir, clamp(tam * 1.5 + 1.7, 2.4, 8) * this._fatorDist());
+    // v10: a peça ocupa ~70% da área livre (sem chegar perto demais de peças pequenas)
+    // folga de 15 cm: portas, capô e tampa abrem ao selecionar e ficam maiores que a caixa em repouso
+    this.irPara(alvo, dir, Math.max(2.2, this._distParaCaber(b.clone().expandByScalar(0.15), alvo, dir, 0.7)));
+  }
+  // v10: distância para a caixa caber na área livre da tela (fora dos menus e do painel), ocupando `preench` dela.
+  // Projeta os 8 cantos da caixa na câmera que olha de `dir` para `alvo` e pega a distância mínima em que todos cabem.
+  _distParaCaber(caixa, alvo, dir, preench = 0.88) {
+    const m = this._margem || { direita: 0, baixo: 0, topo: 0, esq: 0 }, w = this.container.clientWidth, h = this.container.clientHeight;
+    const livreW = Math.max(140, w - m.direita - m.esq), livreH = Math.max(140, h - m.topo - m.baixo);
+    const focal = (h / 2) / Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2));
+    const tx = livreW / 2 * preench / focal, ty = livreH / 2 * preench / focal;
+    const d = (dir.isVector3 ? dir.clone() : new V3(...dir)).normalize(), frente = d.clone().negate();
+    const dirH = new V3().crossVectors(frente, new V3(0, 1, 0)).normalize(), cima = new V3().crossVectors(dirH, frente);
+    let dist = 0;
+    for (const x of [caixa.min.x, caixa.max.x]) for (const y of [caixa.min.y, caixa.max.y]) for (const z of [caixa.min.z, caixa.max.z]) {
+      const c = new V3(x, y, z).sub(alvo), prof = c.dot(d);
+      dist = Math.max(dist, Math.abs(c.dot(dirH)) / tx + prof, Math.abs(c.dot(cima)) / ty + prof);
+    }
+    return clamp(dist, this.controles.minDistance, this.controles.maxDistance);
+  }
+  // Caixa das peças de uma região do lado que a câmera vê (lateral direita = só as portas da direita…)
+  _caixaZonas(zonas, dir) {
+    const d = (dir.isVector3 ? dir.clone() : new V3(...dir)).normalize(), meio = this.caixaCarro.getCenter(new V3());
+    const toda = new THREE.Box3(), lado = new THREE.Box3(), mb = new THREE.Box3(), c = new V3();
+    for (const id of zonas) for (const m of this._malhasDe(id)) {
+      if (!m.visible) continue;
+      mb.setFromObject(m); if (mb.isEmpty()) continue;
+      toda.union(mb);
+      if (mb.getCenter(c).sub(meio).dot(d) > -0.15) lado.union(mb);
+    }
+    return lado.isEmpty() ? (toda.isEmpty() ? null : toda) : lado;
   }
   // Move a câmera orbitando (coordenadas esféricas): o carro "gira" até a vista pedida
   irPara(alvo, dir, dist, { duracao = 0.9, imediato = false } = {}) {
@@ -918,7 +957,12 @@ export class Carro3D {
   setRegiao(zonas, vista) {
     this.regiao = zonas && zonas.length ? new Set(zonas) : null;
     this._aplicarMateriais();
-    if (vista) this.irPara(vista.alvo, vista.dir, vista.dist * this._fatorDist(), { duracao: 1.1 });
+    if (!vista) return;
+    // v10: enquadra as peças da região (não o carro inteiro) na área livre da tela, em pé ou deitado
+    const caixa = this.caixaCarro && (zonas?.length ? this._caixaZonas(zonas, vista.dir) : this.caixaCarro);
+    if (!caixa) return this.irPara(vista.alvo, vista.dir, vista.dist * this._fatorDist(), { duracao: 1.1 });
+    const alvo = caixa.getCenter(new V3()); alvo.y = Math.max(alvo.y, 0.3);
+    this.irPara(alvo, vista.dir, this._distParaCaber(caixa, alvo, vista.dir, zonas?.length ? 0.9 : 0.92), { duracao: 1.1 });
   }
 
   // Filtro de camadas: as zonas da lista ficam sólidas e o resto translúcido (null = sem filtro, carro normal).
@@ -1009,17 +1053,107 @@ export class Carro3D {
     this._grade.material.uniforms.uCor.value.set(cor); this._grade.material.uniforms.uOpac.value = opac;
   }
 
-  // Personalização: { aerofolio: bool, corRodas: '#hex' | null (original) }. Antes do modelo carregar, só guarda.
-  setPersonalizacao({ aerofolio = true, corRodas = null, placaDianteira = 'original' } = {}) {
-    this._perso = { aerofolio, corRodas, placaDianteira };
+  // Personalização: { aerofolio: bool, corRodas: '#hex' | null (original), pneu: '205/60R16' | null (original) }.
+  // Antes do modelo carregar, só guarda.
+  // v10.1: pneu = dianteiros, pneuTras = traseiros (sem pneuTras = mesma medida da frente, como na v10)
+  setPersonalizacao({ aerofolio = true, corRodas = null, placaDianteira = 'original', pneu = null, pneuTras } = {}) {
+    if (pneuTras === undefined) pneuTras = pneu;
+    this._perso = { aerofolio, corRodas, placaDianteira, pneu, pneuTras };
     for (const m of this.aerofolios || []) m.visible = aerofolio;
     if (!this.raiz) return;
-    if (this.zonas.parachoque_d) {
-      try { this._placaDianteira(placaDianteira); } catch (e) { console.warn('Placa dianteira', e); }
+    const chave = `${pneu || ''}|${pneuTras || ''}`;
+    if (this._rodasGLB && chave !== (this._chavePneu ?? '|')) {
+      try { this.setPneu(pneu, pneuTras); } catch (e) { console.warn('Pneu', e); }
     }
+    if (this.zonas.parachoque_d) {
+      try { this._placaDianteira(placaDianteira === 'sem' ? 'original' : placaDianteira); } catch (e) { console.warn('Placa dianteira', e); }
+    }
+    for (const p of this.placas || []) p.visible = placaDianteira !== 'sem';   // v10.1.1: "sem placa" tira a da frente e a de trás
     const cor = corRodas || '#a3a9b0';
     this.M.roda.color.set(cor);
     this.raiz.traverse(o => { if (o.isMesh && o.userData.matOrig === this.M.roda) o.material.color.set(cor); });
+  }
+
+  // Pneu por medida (Personalizar → Pneus), por eixo: diant = rodas F*, tras = rodas T* ("205/60R16"; null = original 215/45 R18).
+  // v10.1: em vez de um pneu gerado (liso e com o talão fora do aro), o próprio pneu do modelo é deformado: a borda interna
+  // acompanha o aro (mesma escala radial), a externa vai ao raio da medida, e a largura escala junto com o aro. Assim o
+  // desenho da banda de rodagem continua (esticado) e o talão fica sempre encaixado no aro. O pneu do 3D é ~6% maior que o
+  // real; todas as medidas seguem essa proporção. O cubo sobe/desce para o pneu continuar no chão e o freio vai junto.
+  setPneu(diant, tras = diant) {
+    this._chavePneu = `${diant || ''}|${tras || ''}`;
+    const rodas = this._rodasGLB; if (!rodas) return;
+    const ref = Object.values(rodas)[0], kR = ref.raio / 0.32535;   // 0,32535 m = raio real do 215/45 R18
+    for (const [inst, r] of Object.entries(rodas)) {
+      const md = /^(\d{3})\/(\d{2})R(\d{2})$/.exec((inst[0] === 'F' ? diant : tras) || '') || [0, 215, 45, 18];
+      const l = +md[1], p = +md[2], a = +md[3];
+      const R = (a * 0.0127 + l * p / 1e5) * kR, kr = a / 18, kz = l / 215;
+      r.aro.scale.set(kr, kr, kz);
+      for (const t of r.pneusGLB) this._deformarPneu(t, r, kr, R, kz);
+      const dy = R - r.raio;
+      this._posBase(r.grupo, r.yBase + dy);
+      const f = this._freiosGLB?.[inst]; if (f) this._posBase(f, (f.userData.yBase ??= f.position.y) + dy);
+    }
+    this._calcularCentros();
+    this._aplicarMateriais();
+  }
+  // Deforma o pneu original em coordenadas cilíndricas em torno do eixo da roda (eixo z do mundo):
+  // raio interno → interno × kr (segue o aro), externo → R; largura × kz (a partir do centro do cubo, como o aro).
+  // As normais são corrigidas pela mesma deformação (inversa transposta), para a luz continuar certa nos sulcos.
+  _deformarPneu(t, r, kr, R, kz) {
+    const g = t.geometry, pos = g.attributes.position, nrm = g.attributes.normal;
+    if (!t.userData.orig) {   // guarda a forma original uma vez e mede raio interno/externo e o eixo
+      const P = new Float32Array(pos.count * 3), N = nrm ? new Float32Array(pos.count * 3) : null;
+      for (let i = 0; i < pos.count; i++) {
+        P[i * 3] = pos.getX(i); P[i * 3 + 1] = pos.getY(i); P[i * 3 + 2] = pos.getZ(i);
+        if (N) { N[i * 3] = nrm.getX(i); N[i * 3 + 1] = nrm.getY(i); N[i * 3 + 2] = nrm.getZ(i); }
+      }
+      g.computeBoundingBox();
+      const cx = (g.boundingBox.min.x + g.boundingBox.max.x) / 2, cy = (g.boundingBox.min.y + g.boundingBox.max.y) / 2;
+      let ri = Infinity, re = 0;
+      for (let i = 0; i < pos.count; i++) { const d = Math.hypot(P[i * 3] - cx, P[i * 3 + 1] - cy); ri = Math.min(ri, d); re = Math.max(re, d); }
+      t.userData.orig = { P, N, cx, cy, cz: r.centro.z, ri, re };
+    }
+    const { P, N, cx, cy, cz, ri, re } = t.userData.orig;
+    const ri2 = ri * kr, re2 = R * (re / r.raio), b = (re2 - ri2) / (re - ri);   // re/r.raio ≈ 1 (raio externo da malha)
+    for (let i = 0; i < pos.count; i++) {
+      const dx = P[i * 3] - cx, dy = P[i * 3 + 1] - cy, d = Math.hypot(dx, dy) || 1e-6, ux = dx / d, uy = dy / d;
+      const d2 = ri2 + (d - ri) * b;
+      pos.setXYZ(i, cx + ux * d2, cy + uy * d2, cz + (P[i * 3 + 2] - cz) * kz);
+      if (N) {
+        const nx = N[i * 3], ny = N[i * 3 + 1], nz = N[i * 3 + 2];
+        const nr = (nx * ux + ny * uy) / b, nt = (-nx * uy + ny * ux) / (d2 / d), na = nz / kz;
+        const x = nr * ux - nt * uy, y = nr * uy + nt * ux, k = Math.hypot(x, y, na) || 1;
+        nrm.setXYZ(i, x / k, y / k, na / k);
+      }
+    }
+    pos.needsUpdate = true; if (N) nrm.needsUpdate = true;
+    g.computeBoundingBox(); g.computeBoundingSphere();
+  }
+  // Personalizar → Pneus: enquadra a roda dianteira direita, quase de lado, para ver a troca de medida
+  focarRoda() {
+    const r = this._rodasGLB?.FD || Object.values(this._rodasGLB || {})[0]; if (!r) return;
+    this.focarObjetos([r.grupo], [0.35, 0.16, 1], 0.5, 1.5);
+  }
+  // v10.1.1: enquadra objetos (aerofólio, placa…) vistos de `dir`, ocupando `preench` da área livre
+  focarObjetos(objs, dir, preench = 0.6, min = 1.5) {
+    const b = new THREE.Box3(); objs.forEach(o => o && b.expandByObject(o));
+    if (b.isEmpty()) return;
+    const alvo = b.getCenter(new V3()), d = new V3(...dir);
+    this.irPara(alvo, d, Math.max(min, this._distParaCaber(b, alvo, d, preench)), { duracao: 1 });
+  }
+  // Personalizar: vista de cada opção (aerofólio = traseira, placa = frente, rodas/pneus = roda; o resto = carro inteiro)
+  focarPerso(tipo) {
+    if (tipo === 'rodas' || tipo === 'pneus') return this.focarRoda();
+    if (tipo === 'aerofolio') return this.focarObjetos(this.zonas.porta_malas?.meshes || this.aerofolios, [-1, 0.55, 0.55], 0.62, 2);
+    if (tipo === 'placa') return this.focarObjetos(this.zonas.parachoque_d?.meshes || this.placas, [1, 0.2, 0.32], 0.8, 2);
+    this.setRegiao(null, { dir: [5.6, 2.4, 5.2], dist: 8, alvo: [0, 0.6, 0] });
+  }
+  // "Voltar à vista da zona" com uma peça aberta: refaz o enquadramento dela
+  reenquadrarSelecao() { if (this.selecionada) this._focar(this.selecionada, this.instSel); }
+  // muda a altura de repouso de um grupo animado (rodas, freios) sem atrapalhar a animação de abrir/afastar
+  _posBase(obj, y) {
+    const a = this.anim.find(x => x.obj === obj);
+    if (a) { obj.position.y += y - a.basePos.y; a.basePos.y = y; } else obj.position.y = y;
   }
 
   setCor(cor) {
